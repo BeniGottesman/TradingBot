@@ -59,29 +59,33 @@ class pairsTrading:
         return
 
 
+
+
 def main ():
     #1st we check the market with high exchange volume
     strat = pairsTrading()
     checkCryptoVolume = {}
+    checkCryptoVolume['BTC']  = 500
     checkCryptoVolume['USDT'] = 100000000
+    checkCryptoVolume['BNB']  = 5000
     L = strat.getPairsVolume(**checkCryptoVolume)
     print(L)
 
     #2nd I scrap the datas
-    # f = os.path.dirname(os.path.realpath(__file__))+"\\"
-    # paramScrap = {"folder": f,
-    #               "years": en.YEARS, "months": [1,2,3,4,5,6,7,8,9,10,11,12],
-    #               "trading_type": "spot",
-    #               "symbols": L, "intervals": ['15m'],
-    #               "startDate": "2017-01", "endDate": "2022-08",
-    #               "checksum": True}
+    f = os.path.dirname(os.path.realpath(__file__))+"\\"
+    paramScrap = {"folder": f,
+                  "years": en.YEARS, "months": [1,2,3,4,5,6,7,8,9,10,11,12],
+                   "trading_type": "spot",
+                   "symbols": L, "intervals": ['15m'],
+                   "startDate": "2017-01", "endDate": "2022-08",
+                   "checksum": True}
 
-    # dr.retrieveHistoricFromBinanceDatas (paramScrap)
+    dr.retrieveHistoricFromBinanceDatas (paramScrap)
 
     #3rd I convert them into a dataframe
-    pairs = L['USDT']
-    hist = dr.CSVToDataFrameOfManyPairs(pairs[5], 'spot', '15m')
-    print(hist)
+    # pairs = L['USDT']
+    # hist = dr.CSVToDataFrameOfManyPairs(pairs[5], 'spot', '15m')
+    # print(hist)
 
 
 

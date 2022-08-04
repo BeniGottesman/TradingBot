@@ -2,7 +2,8 @@ import enums as en
 import os
 import sys
 import pandas as pd
-sys.path.append("C:\\Users\\benig\\Documents\\Projects\\TradingBot\\binanceDataRetrieve\\")
+fileDirectory = os.getcwd()
+sys.path.append(fileDirectory+"binanceDataRetrieve\\")
 from binanceDataRetrieve import downloadkline as dk
 import enums as en
 

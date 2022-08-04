@@ -9,11 +9,11 @@
 #import sys
 import os
 from os.path import exists
-import requests #for checking if it is downloadable see https://stackoverflow.com/questions/61629856/how-to-check-whether-a-url-is-downloadable-or-not
+# import requests #for checking if it is downloadable see https://stackoverflow.com/questions/61629856/how-to-check-whether-a-url-is-downloadable-or-not
 from datetime import *
-import pandas as pd
+# import pandas as pd
 from enums import *
-from utility import download_file, get_all_symbols, get_parser, get_start_end_date_objects, convert_to_date_object, \
+from .utility import download_file, get_all_symbols, get_parser, get_start_end_date_objects, convert_to_date_object, \
   get_path
 import zipfile
 
