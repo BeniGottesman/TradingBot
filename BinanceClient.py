@@ -3,7 +3,6 @@ from designPattern.Singleton import Singleton
 import Keys as keys
 
 apikey = keys.apikey
-
 apisecret = keys.apisecret
 
 class client(metaclass=Singleton):
