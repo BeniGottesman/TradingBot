@@ -1,5 +1,7 @@
 """Portfolio.py"""
 
+# https://refactoring.guru/fr/design-patterns/composite/python/example
+
 import string
 from typing import List
 from matplotlib import pyplot as plt
@@ -7,120 +9,142 @@ import numpy as np
 from pandas import DataFrame
 import BinanceClient
 from datetime import date
+from __future__ import annotations
 
 
 class AbstractPortfolio:
-    quoteCurrency: string
-    #Why I am not using a Dataframe: 
-    #https://stackoverflow.com/questions/13784192/creating-an-empty-pandas-dataframe-then-filling-it
-    assets: List #list of str assets hold assets = [BTC, ETH, ...]
-    transactions: dict #transaction[BTC][datetime]-> [hold, Spot/Future, Strategy, price in USDT]
-    balance: dict #balance[Date]=value of the pf in USDT
-    value: List
+    """
+    The base Component class declares common operations for both simple and
+    complex objects of a composition.
+    """
 
-    def __init__(self, _quoteCurrency: string):
-        self.assets = []
-        self.transactions = {}
-        self.quoteCurrency = _quoteCurrency
+    @property
+    def parent(self) -> AbstractPortfolio:
+        return self._parent
 
-    def sell(self, date, asset, qty):#virtual pure
+    @parent.setter
+    def parent(self, parent: AbstractPortfolio):
+        """
+        Optionally, the base Component can declare an interface for setting and
+        accessing a parent of the component in a tree structure. It can also
+        provide some default implementation for these methods.
+        """
+
+        self._parent = parent
+
+    """
+    In some cases, it would be beneficial to define the child-management
+    operations right in the base Component class. This way, you won't need to
+    expose any concrete component classes to the client code, even during the
+    object tree assembly. The downside is that these methods will be empty for
+    the leaf-level components.
+    """
+
+    def add(self, component: AbstractPortfolio) -> None:
         pass
 
-    def buy(self, date, asset, qty):#virtual pure
+    def remove(self, component: AbstractPortfolio) -> None:
+        pass
+
+    def is_composite(self) -> bool:
+        """
+        You can provide a method that lets the client code figure out whether a
+        component can bear children.
+        """
+
+        return False
+
+    @abstractmethod
+    def operation(self) -> str:
+        """
+        The base Component may implement some default behavior or leave it to
+        concrete classes (by declaring the method containing the behavior as
+        "abstract").
+        """
+
         pass
     
-    def dataFrame(self):
-        return #dataframe of portfolio
+    def value(self) -> str:
+        """
+        The base Component may implement some default behavior or leave it to
+        concrete classes (by declaring the method containing the behavior as
+        "abstract").
+        """
 
-    def addAsset(self, A: str):
-        self.assets.append(A)
+        pass
 
-    def removeAsset(self, A: str):
-        self.assets.remove(A)
+# Leaf
+class Pair(AbstractPortfolio):
+    def __init__(self, pairString) -> None:
+        self.pairString = pairString
+        self.numberOfShares = 0
+        self.BaseCurrentValue = 0
+        self.QuoteCurrentValue = 0
 
-    #return the actual value of the portfolio
-    def pfValue (self):
-        client = BinanceClient.client.getClient()
-        tmpValue = 0
-        fee = 0.001
-        for a in self.assets:
-            price = client.get_symbol_ticker(symbol=a)
-            lastvalue = list(self.value[a])[-1]
-            tmpValue = price*lastvalue*(1.0-fee)
+    def getPair(self)-> str:
+        return "Pair = "+self.pairString
 
-    #return the value of the portfolio at date
-    def pfValue (self, date=date.datetime()):
-        return
+    def operation(self) -> str:
+        return "Pair = "
 
-    def plotHistory (self):
-        #Sum each column:
-        PnL = self.transactions.sum(axis=0)
-        
-        plt.plot(self.transactions.index, PnL)
-        plt.show()
+    def value(self) -> str:
+        return self.QuoteCurrentValue
 
-    def plotAssetTransactions(self, asset):
-        plt.plot(self.transactions[asset].keys(), self.transactions[asset])
-        plt.show()
-    
-    def plot (self):
-        self.plotHistory (self)
+# Composite
+class Portfolio(AbstractPortfolio):
+    """
+    The Composite class represents the complex components that may have
+    children. Usually, the Composite objects delegate the actual work to their
+    children and then "sum-up" the result.
+    """
 
-    def expectedReturn(self)-> np.float64:
-        return 0.0
+    def __init__(self, quoteCurrency: string) -> None:
+        self._children: List[AbstractPortfolio] = []
+        self._quoteCurrency = quoteCurrency
 
-    def volatility(self)-> np.float64:
-        return 0.0
+    def add(self, abspf: AbstractPortfolio) -> None:
+        self._children.append(abspf)
+        abspf.parent = self
 
-    def sharpeRatio(self)-> np.float64:
-        #Sharpe Ratio = (Rp – Rf) / Standard deviation
-        #Rp = expected return (or actual return for historical calculations) on the asset or the portfolio being measured.
-        #risk free rate
-        return self.expectedReturn(self)/self.volatility(self)
+    def remove(self, abspf: AbstractPortfolio) -> None:
+        self._children.remove(abspf)
+        abspf.parent = None
 
-    def addAsset (self, _a: str):
-        self.assets.append(_a)
-        #add 0 transaction ?
+    def is_composite(self) -> bool:
+        return True
 
-    def numberOfAssets (self):
-        return len(self.assets)
+    def getPortfolioCurrency (self) -> string:
+        return self._quoteCurrency
 
+    def value(self) -> str:
+        TCV = 0
+        for child in self._children:
+            TCV += child.value()
+        return TCV
 
-class BacktestPortfolio(AbstractPortfolio):
-    def __init__(self, _quoteCurrency: string):
-        super(self, _quoteCurrency).__init__()
+    def operation(self) -> str:
+        """
+        The Composite executes its primary logic in a particular way. It
+        traverses recursively through all its children, collecting and summing
+        their results. Since the composite's children pass these calls to their
+        children and so forth, the whole object tree is traversed as a result.
+        """
 
-    def sell(self, date, asset, qty):
-        self.transactions[asset][date] = qty
-        lastvalue = list(self.value[asset])[-1]
-        self.value[asset][date] = lastvalue - qty #2d-dictionary
-        print (date,". ", asset ,"Sell = ", qty, 
-                ", Hold = ", self.value[asset][date])
-
-    def buy(self, date, asset, qty):
-        self.transactions[asset][date] = qty
-        lastvalue = list(self.value[asset])[-1]
-        self.value[asset][date] = lastvalue + qty
-        print (date,". ", asset ,"Buy = ", qty, 
-                ", Hold = ", self.value[asset][date])
+        results = []
+        for child in self._children:
+            results.append(child.operation())
+        return f"Branch({'+'.join(results)})"
 
 
-class TradingPortfolio(AbstractPortfolio):
-    def __init__(self, _quoteCurrency: string):
-        super(self, _quoteCurrency).__init__()
+if __name__ == "__main__":
+    tree = Portfolio()
 
-    def sell(self, date, asset, qty):
-        return 0
+    branch1 = Portfolio()
+    branch1.add(Pair())
+    branch1.add(Pair())
 
-    def buy(self, date, asset, qty):
-        return 1
+    branch2 = Portfolio()
+    branch2.add(Pair())
 
-
-class Portfolio:
-    pf: AbstractPortfolio
-
-    def __init__(self, pf):
-        return
-
-    def f():
-        return
+    tree.add(branch1)
+    tree.add(branch2)

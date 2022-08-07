@@ -1,97 +1,98 @@
-import BinanceClient as bc
-from datetime import date
-import os
-import dataRetrieving as dr
-import enums as en
-import numpy as np
-
-clienSingletonInstance = bc.client()
-client = clienSingletonInstance.getClient()
-
-class pairsTrading:
-    def __init__(self):
-        return
-
-    def createPf(self):
-        return
-
-    def pairsSelection(self):
-        return
-
-    #We provide a dict checkCryptoVolume['BTC']  = 100 and return every pairs XXXBTC such that the volume is over 100 last 24h
-    def getPairsVolume(self, **asset)-> dict:
-        # import symbols from exchange infos
-        symbols = {}
-        for symbol in client.get_exchange_info()['symbols']:
-            if symbol['isSpotTradingAllowed']==True:
-                symbols [symbol['symbol']] = symbol
-
-        # get through the 24h tickers and add quote_volume
-        for ticker in client.get_ticker():
-            if ticker['symbol'] in symbols: #i.e. isSpotTradingAllowed
-                symbols[ticker['symbol']]['quoteVolume'] = ticker['quoteVolume'] #we add a quoteVolume key to the dictionnary
-                
-        dic_symbols = {}
-        #LTCBTC = LTC = Base Asset, BTC = Quote Asset
-        for qA in asset:#qA=Quote Asset
-            dic_symbols[qA] = 0
-            pair = [] #exemple BTCUSDT
-            for key,item in symbols.items(): 
-                bA = item['baseAsset']
-                if float(item['quoteVolume'])> float(asset[qA]) and item['quoteAsset']==qA:
-                    pair.append(bA+qA)
-            dic_symbols[qA] = pair
-            print(qA,':', len(dic_symbols[qA]))
-
-        return dic_symbols
-
-        # start_date = date.datetime(2020,1,1)
-        # intervals = ['1h']
-        # for quote in dic_symbols.keys():
-        #     for symbol in dic_symbols[quote]:
-        #         print(f"{date.datetime.now()} - downloading symbol {symbol} on {len(intervals)} intervals")
-        #         for interval in intervals:
-        #             try:
-        #                 store_ohlcv(client=client, symbol=symbol, interval=interval, start_date=start_date)
-        #             except Exception as e:
-        #                 print(f'Error on {symbol}_{interval} because of {str(e)}')
-
-    def plotResult(self):
-        return
-
-#checkCryptoVolume contain the crypto and the 24h-volume minimum to download
-#paramScrap contain every parameters for scrapping
-def scrapDatas (checkCryptoVolume: dict, paramScrap: dict)-> dict:
-    #1st we check the market with high exchange volume
-    strat = pairsTrading()
-    L = strat.getPairsVolume(**checkCryptoVolume)
-    print(L)
-
-    #2nd I scrap the datas with the desired 24h-volume
-    paramScrap["symbols"]=L
-    dr.retrieveHistoricFromBinanceDatas (paramScrap)
-
-    return L
-
-def main ():
-    checkCryptoVolume = {}
-    checkCryptoVolume['BTC']  = 500 #we want every pairs with base BTC such that the 24h-volume >500 
-    checkCryptoVolume['USDT'] = 100000000
-    checkCryptoVolume['BNB']  = 5000
-
-    f = os.path.dirname(os.path.realpath(__file__))+"\\"
-    paramScrap = {"folder": f,
-                  "years": en.YEARS, "months": [1,2,3,4,5,6,7,8,9,10,11,12],
-                  "trading_type": "spot", "intervals": ['15m'],
-                  "startDate": "2017-01", "endDate": "2022-08",
-                  "checksum": True}
-    L = scrapDatas(checkCryptoVolume, paramScrap)
-
-    #3rd I convert them into a dataframe
-    # pairs = L['USDT']
-    # hist = dr.CSVToDataFrameOfManyPairs(pairs[5], 'spot', '15m')
-    # print(hist)
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from typing import List
 
 
+class Context():
+    """
+    The Context defines the interface of interest to clients.
+    """
 
-main()
+    def __init__(self, strategy: Strategy) -> None:
+        """
+        Usually, the Context accepts a strategy through the constructor, but
+        also provides a setter to change it at runtime.
+        """
+
+        self._strategy = strategy
+
+    @property
+    def strategy(self) -> Strategy:
+        """
+        The Context maintains a reference to one of the Strategy objects. The
+        Context does not know the concrete class of a strategy. It should work
+        with all strategies via the Strategy interface.
+        """
+
+        return self._strategy
+
+    @strategy.setter
+    def strategy(self, strategy: Strategy) -> None:
+        """
+        Usually, the Context allows replacing a Strategy object at runtime.
+        """
+
+        self._strategy = strategy
+
+    def do_some_business_logic(self) -> None:
+        """
+        The Context delegates some work to the Strategy object instead of
+        implementing multiple versions of the algorithm on its own.
+        """
+
+        # ...
+
+        print("Context: Sorting data using the strategy (not sure how it'll do it)")
+        result = self._strategy.do_algorithm(["a", "b", "c", "d", "e"])
+        print(",".join(result))
+
+        # ...
+
+
+class Strategy():
+    """
+    The Strategy interface declares operations common to all supported versions
+    of some algorithm.
+
+    The Context uses this interface to call the algorithm defined by Concrete
+    Strategies.
+    """
+
+    @abstractmethod
+    def Long_algorithm(self, data: List):
+        pass
+
+    @abstractmethod
+    def Short_algorithm(self, data: List):
+        pass
+
+
+"""
+Concrete Strategies implement the algorithm while following the base Strategy
+interface. The interface makes them interchangeable in the Context.
+"""
+
+
+class PairsTrading(Strategy):
+    def Long_algorithm(self, data: List) -> List:
+        return sorted(data)
+
+
+class ConcreteStrategyB(Strategy):
+    def Long_algorithm(self, data: List) -> List:
+        return reversed(sorted(data))
+
+
+if __name__ == "__main__":
+    # The client code picks a concrete strategy and passes it to the context.
+    # The client should be aware of the differences between strategies in order
+    # to make the right choice.
+
+    context = Context(PairsTrading())
+    print("Client: Strategy is set to normal sorting.")
+    context.do_some_business_logic()
+    print()
+
+    print("Client: Strategy is set to reverse sorting.")
+    context.strategy = ConcreteStrategyB()
+    context.do_some_business_logic()
