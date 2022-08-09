@@ -25,17 +25,18 @@ def retrieveHistoricFromBinanceDatas (paramScrap):
 
 #convert a csv file into a dataframe
 def CSVtoDataFrame (file)->pd.DataFrame:
-    filepkl = file.split(".")[0]+".pkl"
-    if not os.path.exists(filepkl):
-        hist_df = pd.read_csv(file)
-        hist_df.columns = en.HISTORICAL_BINANCE_COLUMN
-        hist_df['Open Time'] = pd.to_datetime(hist_df['Open Time']/1000, unit='s')
-        hist_df['Close Time'] = pd.to_datetime(hist_df['Close Time']/1000, unit='s')
-        numeric_columns = ['Open', 'High', 'Low', 'Close', 'Volume', 'Quote Asset Volume', 'TB Base Volume', 'TB Quote Volume']
-        hist_df[numeric_columns] = hist_df[numeric_columns].apply(pd.to_numeric, axis=1)
-        hist_df.to_pickle(filepkl)
-    else:
-        hist_df = pd.read_pickle(filepkl)
+    filepkl = file.split(".")[0]+".pkl" #pickle is for reading quickly the csv
+    # if not os.path.exists(filepkl):
+    hist_df = pd.read_csv(file)
+    hist_df.columns = en.HISTORICAL_BINANCE_COLUMN
+    hist_df['Open Time'] = pd.to_datetime(hist_df['Open Time']/1000, unit='s')
+    hist_df['Close Time'] = pd.to_datetime(hist_df['Close Time']/1000, unit='s')
+    numeric_columns = ['Open', 'High', 'Low', 'Close', 'Volume', 'Quote Asset Volume', 'TB Base Volume', 'TB Quote Volume']
+    hist_df[numeric_columns] = hist_df[numeric_columns].apply(pd.to_numeric, axis=1)
+    hist_df.to_pickle(filepkl)
+    os.remove(file)
+    # else:
+    #     hist_df = pd.read_pickle(filepkl)
 
     return hist_df
     
@@ -52,6 +53,8 @@ def CSVPairFolderToDataFrame (pair, trading_type, interval,verbose=False)->pd.Da
             if(verbose):
                 print ("merge = ", file)
             frames.append (CSVtoDataFrame(relative_path+file))
+       elif file.endswith(".pkl"):
+            frames.append (pd.read_pickle(relative_path+file))
     hist_df = pd.concat(frames)
     
     return hist_df
