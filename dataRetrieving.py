@@ -6,6 +6,7 @@ fileDirectory = os.getcwd()
 sys.path.append(fileDirectory+"binanceDataRetrieve\\")
 from binanceDataRetrieve import downloadkline as dk
 import enums as en
+import numpy as np
 
 #Download the datas from binance.data, inside data folder and
 def retrieveHistoricFromBinanceDatas (paramScrap):
@@ -52,12 +53,17 @@ def CSVPairFolderToDataFrame (pair, trading_type, interval,verbose=False)->pd.Da
 
 #Provide a list of pairs, then call CSVFolderToDataFrame() above
 #return dict of dataframe
-def CSVToDataFrameOfManyPairs (pairs, trading_type, interval)->list:
+def CSVToDataFrameOfManyPairs (pairs, trading_type, interval)->dict:
     hist_df = {}
+    minimumDate = np.datetime64("2001-01-01") #minimumDate is useful to cut every array 
     if(type (pairs) != list):
         pairs = [pairs]
     for pair in pairs:
         hist_df[pair] = CSVPairFolderToDataFrame (pair, trading_type, interval)
+        if minimumDate < hist_df[pair]['Open Time'].iloc[0]:
+            minimumDate = hist_df[pair]['Open Time'].iloc[0]
+    for pair in pairs:#every arrays will start with the same date
+        hist_df[pair] = hist_df[pair].loc[(hist_df[pair]['Open Time'] > minimumDate)]
     return hist_df
 
 

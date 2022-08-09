@@ -16,7 +16,7 @@ client = clienSingletonInstance.getClient()
 def main ():
     checkCryptoVolume = {}
     # checkCryptoVolume['BTC']  = 100 #we want every pairs with base BTC such that the 24h-volume >500 
-    checkCryptoVolume['USDT'] = 1000000000
+    checkCryptoVolume['USDT'] = 100000000
     # checkCryptoVolume['BNB']  = 1000
 
     f = os.path.dirname(os.path.realpath(__file__))+"\\"
@@ -31,29 +31,25 @@ def main ():
     #3rd I convert them into a dataframe
     print("To dataframe")
     pairs = L['USDT']
-    data = {}
-    for pair in pairs:
-        data[pair] = dr.CSVToDataFrameOfManyPairs(pair, 'spot', '15m')
-    # print(hist)
-    print("Done.")
+    data = dr.CSVToDataFrameOfManyPairs(pairs, 'spot', '15m')
+    print("To dataframe: Done.")
 
     print("Johansen Test")
     p = 1
-
     log_return = {}
-    for key, value in data.items():
-        # print(value["BTCUSDT"].columns.tolist())
-        s = value [key]['Close']
+    # for key, value in data.items():
+    for key in pairs:
+        s = data [key] ['Close']
         log_return[key] = np.array (stat.log_Transform(s))
         print(key)
     
-    y = pd.DataFrame(index=data['BTCUSDT'].index, data={key: log_return[key] for key in log_return})
+    y = pd.DataFrame(index=data['BTCUSDT']['Close Time'], data={key: log_return[key] for key in log_return})
     
     jres = stat.get_johansen(y, p)
 
     print ("There are ", jres.r, "cointegration vectors")
 
-    v =  np.array ([np.ones(3), jres.evecr[:,0], jres.evecr[:,1]])
+    v =  np.array ([np.ones(3), jres.evecr[:,0], jres.evecr[:,1]], dtype=object)
     M = np.asmatrix (v)
     print(v)
 
