@@ -37,29 +37,30 @@ def main ():
     print("To dataframe: Done.")
 
     print("Johansen Test")
-    p = 1
     log_return = {}
-    
+    thirtyDays = int ((60/15)*24*10)
+
     for key in pairs:
-        s = data [key] ['Close']
+        s = data [key]['Close']
         log_return[key] = np.array (stat.log_Transform(s))
     
-    y = pd.DataFrame(index=data[referencePair]['Close Time'], data={key: log_return[key] for key in log_return})
-    
-    jres = stat.get_johansen(y, p)
+    pd_lr_price_series = pd.DataFrame(index=data[referencePair]['Close Time'], data={key: log_return[key] for key in log_return})
+    pd_lr_price_series = pd_lr_price_series[-thirtyDays:]#we take only the last 30 days
+    p = 1
+    jres = stat.get_johansen(pd_lr_price_series, p)
 
     print ("There are ", jres.r, "cointegration vectors")
 
     v =  np.array ([np.ones(jres.r), jres.evecr[:,0], jres.evecr[:,1]], dtype=object)
     # M = np.asmatrix (v)
 
-    pd_lr_price_series = pd.DataFrame(index=data[referencePair].index, data={key: log_return[key] for key in log_return} )
-    spread_average = np.mean (np.dot(pd_lr_price_series.values, v[1,:]))
-    spread_average *= np.ones(len(data[referencePair]['Close Time']))#it will be a vector of average
+    # pd_lr_price_series = pd.DataFrame(index=data[referencePair]['Close Time'], data={key: log_return[key] for key in log_return} )
+    spread_average  = np.mean (np.dot(pd_lr_price_series.values, v[1,:]))
+    spread_average *= np.ones(len(pd_lr_price_series[referencePair].index)) #it will be a vector of average
     spread = np.dot(pd_lr_price_series.values, v[1,:])
 
     # print (spread_average)
-    plt.plot(data[referencePair]['Close Time'], spread, data[referencePair]['Close Time'], spread_average)
+    plt.plot(pd_lr_price_series[referencePair].index, spread, pd_lr_price_series[referencePair].index, spread_average)
     plt.gcf().autofmt_xdate()
     plt.plot()
     plt.show()
