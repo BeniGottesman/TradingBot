@@ -58,7 +58,7 @@ def main ():
     spread_average *= np.ones(len(data[referencePair]['Close Time']))#it will be a vector of average
     spread = np.dot(pd_lr_price_series.values, v[1,:])
 
-    print (spread_average)
+    # print (spread_average)
     plt.plot(data[referencePair]['Close Time'], spread, data[referencePair]['Close Time'], spread_average)
     plt.gcf().autofmt_xdate()
     plt.plot()
