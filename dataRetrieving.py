@@ -25,12 +25,17 @@ def retrieveHistoricFromBinanceDatas (paramScrap):
 
 #convert a csv file into a dataframe
 def CSVtoDataFrame (file)->pd.DataFrame:
-    hist_df = pd.read_csv(file)
-    hist_df.columns = en.HISTORICAL_BINANCE_COLUMN
-    hist_df['Open Time'] = pd.to_datetime(hist_df['Open Time']/1000, unit='s')
-    hist_df['Close Time'] = pd.to_datetime(hist_df['Close Time']/1000, unit='s')
-    numeric_columns = ['Open', 'High', 'Low', 'Close', 'Volume', 'Quote Asset Volume', 'TB Base Volume', 'TB Quote Volume']
-    hist_df[numeric_columns] = hist_df[numeric_columns].apply(pd.to_numeric, axis=1)
+    filepkl = file.split(".")[0]+".pkl"
+    if not os.path.exists(filepkl):
+        hist_df = pd.read_csv(file)
+        hist_df.columns = en.HISTORICAL_BINANCE_COLUMN
+        hist_df['Open Time'] = pd.to_datetime(hist_df['Open Time']/1000, unit='s')
+        hist_df['Close Time'] = pd.to_datetime(hist_df['Close Time']/1000, unit='s')
+        numeric_columns = ['Open', 'High', 'Low', 'Close', 'Volume', 'Quote Asset Volume', 'TB Base Volume', 'TB Quote Volume']
+        hist_df[numeric_columns] = hist_df[numeric_columns].apply(pd.to_numeric, axis=1)
+        hist_df.to_pickle(filepkl)
+    else:
+        hist_df = pd.read_pickle(filepkl)
 
     return hist_df
     
