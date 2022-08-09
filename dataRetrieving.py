@@ -36,7 +36,7 @@ def CSVtoDataFrame (file)->pd.DataFrame:
 #This Function Take A pair, trading type = ''spot'', and an interval=''15m''
 #then convert the csv file into a dataframe
 #hist_df = CSVFolderToDataFrame("BNBUSDT", "spot", "15m")
-def CSVFolderToDataFrame (pair, trading_type, interval,verbose=False)->pd.DataFrame:
+def CSVPairFolderToDataFrame (pair, trading_type, interval,verbose=False)->pd.DataFrame:
     relative_path = "data\\"+trading_type+"\\monthly\\klines\\"+pair+"\\"+interval+"\\"
 
     #We now merge
@@ -57,7 +57,7 @@ def CSVToDataFrameOfManyPairs (pairs, trading_type, interval)->list:
     if(type (pairs) != list):
         pairs = [pairs]
     for pair in pairs:
-        hist_df[pair] = CSVFolderToDataFrame (pair, trading_type, interval)
+        hist_df[pair] = CSVPairFolderToDataFrame (pair, trading_type, interval)
     return hist_df
 
 
