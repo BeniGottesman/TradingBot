@@ -16,8 +16,9 @@ from __future__ import annotations
 
 class AbstractPortfolio:
 
-    def __init__(self, _type="currency") -> None:
+    def __init__(self, _type="currency", _name="generic portfolio") -> None:
         self.__type__ = _type
+        self.__name__ = _name
 
     @property
     def parent(self) -> AbstractPortfolio:
@@ -39,10 +40,20 @@ class AbstractPortfolio:
     def getType (self) -> string:
         return self.__type__
 
+    def getName (self) -> string:
+        return self.__name__
+
     def is_composite(self) -> bool:
         return False
 
+    @abstractmethod
     def value(self) -> str:
+        pass
+    @abstractmethod
+    def updateQuotation (self, listQuotations, verbose = False) -> None:
+        pass
+    @abstractmethod
+    def checkKey (key: string) -> bool:
         pass
 
 # The common state interface for all the states
@@ -79,7 +90,16 @@ class State():
 # The common state interface for all the states
 class readyToTrade(State):
 
-    def entry(self, listInvestments: dict, listQuotation: dict, verbose = False) -> None:
+    @property#=getPf=getter
+    def pf(self) -> Portfolio:
+        return self._pf
+
+    @pf.setter#=setPf
+    def pf(self, pf: Portfolio) -> None:
+        self._abspf = pf
+
+    #REVOIR LALGO
+    def entry(self, listInvestments: dict, verbose = False) -> None:
         if verbose:
             print("We entry the strat.")
 
@@ -88,27 +108,36 @@ class readyToTrade(State):
             print("No money in BAL = "+tmpBAL)
             return
 
+        #We check if the pairs already exists in pf
+        #add checkKey induction method in Portfolio
+        exists : List[bool] = []
+        children = self.pf.getChildren()
         for key, quantity in listInvestments.items: #self.pf._children
-            child = self.pf._children
-            if not key in child:
-                newShare = Share(key, quantity)
+            exists[key] = False
+            for i in children:
+                child = children [i]
+                if child.getName() == key:
+                    exists[key] = True
+                    break
+        
+        for key, quantity in listInvestments.items: #self.pf._children
+            if not exists[key]:
+                newShare = Share(key, quantity)#(key, quantity, time)
                 self.pf.add(newShare)
             else:
+                # child.addShareQuantity(time, quantity) and add to a dict
                 child.addShareQuantity(quantity)
-            tmpBAL -= quantity*listQuotation[key]
+            tmpBAL -= child.value()
 
         self.pf.setBAL(tmpBAL)
 
-    def exit(self, listQuotation: dict, verbose = False) -> None:
+    def exit(self, verbose = False) -> None:
         if verbose:
             print("We exit the strat.")
 
-        tmpBAL = self.pf.getBAL()
-        for key, tmp in listQuotation.items: #self.pf._children
-            share = self.pf.getLeaf(key)
-            tmpBAL += share.getQuantity()*listQuotation[key]
-            share.setQuantity(0) #or we remove
-            # self.pf.remove(key)
+        tmpBAL = self.pf.value()
+        for share in self.pf._children:
+            share.setQuantity(0)
         self.pf.setTCV (tmpBAL)
         self.pf.setBAL (tmpBAL)
 
@@ -155,8 +184,8 @@ class Share(AbstractPortfolio):
 
     #_type="currency"
     def __init__(self, _name, state: State, _type="currency") -> None:
-        super().__init__(_type)
-        self.__name__ = _name #for instance BTCUSDT
+        super().__init__(_type, _name)
+        # self.__name__ = _name #for instance BTCUSDT
         self.setState(state)
         self.__numberOfShares__ = 0
         # self.__BaseCurrentValue__ = 1 because 1 BTC = X Dollar
@@ -165,16 +194,14 @@ class Share(AbstractPortfolio):
     #market value
     def getQuoteCurrentValue (self):
         return self.__QuoteCurrentValue__
-    def setQuoteCurrentValue (self, value: float):
+    def updateQuotation (self, value, verbose = False) -> None:
+        # value = listQuotations[__name__]
         self.__QuoteCurrentValue__ = value
 
     def getQuantity (self):
         return self.__numberOfShares__
     def setQuantity (self, quantity: float):
         self.__numberOfShares__ = quantity
-
-    def getName (self):
-        return self.__name__
 
     # method to change the state of the object
     def setState(self, state: State) -> None:
@@ -194,14 +221,17 @@ class Share(AbstractPortfolio):
     def addShareQuantity(self, shareQuantity: float) -> None:
         self.__numberOfShares__ += shareQuantity
 
+    def checkKey (self, key: string) -> bool:
+        return self.__name__, key == self.__name__
+
 # Composite
 class Portfolio(AbstractPortfolio):
     
     #quoteCurrency="USDT" usually
     def __init__(self, quoteCurrency: string, portfolioName: string, startingMoney: float) -> None:
-        super().__init__("Portfolio")
-        self._children: List[AbstractPortfolio] = []
-        self.__portfolioName__ = portfolioName
+        super().__init__("Portfolio", portfolioName)
+        self.__children__: List[AbstractPortfolio] = []
+        # self.__portfolioName__ = portfolioName
         self.setState(positionClosed())
         self.__quoteCurrency__ = quoteCurrency
         self.__BAL__ = abs(startingMoney)
@@ -209,6 +239,9 @@ class Portfolio(AbstractPortfolio):
 
     def setState(self, state: State) -> None:
         self.__state__ = state
+
+    def getChildren(self) -> AbstractPortfolio:
+        return self.__children__
 
     #TCV getter setter
     def getTCV(self) -> float:
@@ -235,44 +268,49 @@ class Portfolio(AbstractPortfolio):
         return "Value of the portfolio = "+self.__TCV__+self.__quoteCurrency__
 
     def add(self, abspf: AbstractPortfolio) -> None:
-        self._children.append(abspf)
+        self.__children__.append(abspf)
         abspf.parent = self
 
     def remove(self, abspf: AbstractPortfolio) -> None:
-        self._children.remove(abspf)
+        self.__children__.remove(abspf)
         abspf.parent = None
 
     def is_composite(self) -> bool:
         return True
 
-    def getType (self) -> string:
-        return self.__type__
-
     def getShare (self, key: string) -> AbstractPortfolio:
-        for i in len(self._children):
-            if self._children[i].getName() == key:
-                return self._children[i]
+        for i in len(self.__children__):
+            if self.__children__[i].getName() == key:
+                return self.__children__[i]
         print("getShare error try catch, key = "+ key)
         sys.exit()
 
     def getPortfolioCurrency (self) -> string:
         return self.__quoteCurrency__
 
-    #return the TCV, by induction,
+    #return the BAL, by induction,
     #it is preferable to updateValues before
-    def value(self) -> str:
-        self.__TCV__ = 0
-        for child in self._children:
-            self.__TCV__ += child.value()
-        return self.__TCV__
+    def value(self) -> float:
+        tmpValue = 0
+        for child in self.__children__:
+            tmpValue += child.value()
+        return tmpValue
     
     #Update the quote value of the pairs
-    def updateValues(self, listQuotations: dict, verbose = False) -> None:
-
-        for child in self._children:
+    def updateQuotation(self, listQuotations, verbose = False) -> None:
+        for child in self.__children__:
             for key, value in listQuotations.items: #self.pf._children
                if child.getName() == key:
-                    child.setQuoteCurrentValue(value)
+                    child.updateQuotation(value)
+
+    #Search by induction
+    def checkKey (self, key: string) -> string, bool:
+        for i in len(self.__children__):
+            if self.__children__[i].checkKey(key):
+                name = self.__children__[i].getName()
+                return name, True #problem multiple true if by induction
+        
+        return name, False
 
 # if __name__ == "__main__":
 #     tree = Portfolio()
