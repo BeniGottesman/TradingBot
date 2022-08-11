@@ -4,35 +4,27 @@
 
 from abc import abstractmethod
 import string
-import sys
 from typing import List
 from matplotlib import pyplot as plt
 import numpy as np
 from pandas import DataFrame
-import BinanceClient
-from datetime import date
+from datetime import date, datetime
 from __future__ import annotations
 
 
-class AbstractPortfolio:
+class AbstractInstrument:
 
     def __init__(self, _type="currency", _name="generic portfolio") -> None:
         self.__type__ = _type
         self.__name__ = _name
 
     @property
-    def parent(self) -> AbstractPortfolio:
+    def parent(self) -> AbstractInstrument:
         return self._parent
 
     @parent.setter
-    def parent(self, parent: AbstractPortfolio):
+    def parent(self, parent: AbstractInstrument):
         self._parent = parent
-
-    def add(self, component: AbstractPortfolio) -> None:
-        pass
-
-    def remove(self, component: AbstractPortfolio) -> None:
-        pass
 
     """
     Return the Type : Portfolio, share, asset, currency etc
@@ -43,7 +35,7 @@ class AbstractPortfolio:
     def getName (self) -> string:
         return self.__name__
 
-    def is_composite(self) -> bool:
+    def is_Composite(self) -> bool:
         return False
 
     @abstractmethod
@@ -53,7 +45,55 @@ class AbstractPortfolio:
     def updateQuotation (self, listQuotations, verbose = False) -> None:
         pass
     @abstractmethod
-    def checkKey (key: string) -> bool:
+    def isKeyExists (key: string) -> bool:
+        pass
+
+
+class AbstractPortfolio(AbstractInstrument):
+
+    def __init__(self, _type="currency", _name="generic portfolio") -> None:
+        super().__init__(_type, _name)
+
+    def add(self, component: AbstractPortfolio) -> None:
+        pass
+
+    def remove(self, component: AbstractPortfolio) -> None:
+        pass
+
+    def is_Composite(self) -> bool:
+        return False
+
+class severalPortfolios(AbstractPortfolio):
+    """
+    The Composite class represents the complex components that may have
+    children. Usually, the Composite objects delegate the actual work to their
+    children and then "sum-up" the result.
+    """
+
+    def __init__(self) -> None:
+        self._children: List[AbstractPortfolio] = []
+
+    """
+    A composite object can add or remove other components (both simple or
+    complex) to or from its child list.
+    """
+
+    def add(self, component: AbstractPortfolio) -> None:
+        self._children.append(component)
+        component.parent = self
+
+    def remove(self, component: AbstractPortfolio) -> None:
+        self._children.remove(component)
+        component.parent = None
+
+    def is_Composite (self) -> bool:
+        return True
+
+    @abstractmethod
+    def updateQuotation (self, listQuotations, verbose = False) -> None:
+        pass
+    @abstractmethod
+    def isKeyExists (key: string) -> bool:
         pass
 
 # The common state interface for all the states
@@ -69,14 +109,14 @@ class State():
         self._abspf = abspf
 
     @abstractmethod
-    def entry(self, listInvestments: dict, listQuotation: dict, verbose = False) -> None:
+    def entry(self, time: datetime, listInvestments: dict, listQuotation: dict, verbose = False) -> None:
         pass
     
     def updateValues(self, listQuotations: dict) -> None:
         pass
 
     @abstractmethod
-    def exit(self, listQuotation: dict, verbose = False) -> None:
+    def exit(self, time: datetime, listQuotation: dict, verbose = False) -> None:
         pass
 
     @abstractmethod
@@ -99,7 +139,7 @@ class readyToTrade(State):
         self._abspf = pf
 
     #REVOIR LALGO
-    def entry(self, listInvestments: dict, verbose = False) -> None:
+    def entry(self, time: datetime, listInvestments: dict, verbose = False) -> None:
         if verbose:
             print("We entry the strat.")
 
@@ -107,36 +147,25 @@ class readyToTrade(State):
         if tmpBAL <= 0:
             print("No money in BAL = "+tmpBAL)
             return
-
-        #We check if the pairs already exists in pf
-        #add checkKey induction method in Portfolio
-        exists : List[bool] = []
-        children = self.pf.getChildren()
-        for key, quantity in listInvestments.items: #self.pf._children
-            exists[key] = False
-            for i in children:
-                child = children [i]
-                if child.getName() == key:
-                    exists[key] = True
-                    break
         
         for key, quantity in listInvestments.items: #self.pf._children
-            if not exists[key]:
+            if not self.pf.isKeyExists(key):
                 newShare = Share(key, quantity)#(key, quantity, time)
                 self.pf.add(newShare)
             else:
                 # child.addShareQuantity(time, quantity) and add to a dict
-                child.addShareQuantity(quantity)
-            tmpBAL -= child.value()
+                share = self.pf.getShare(key)
+                share.addShareQuantity(quantity)
+            tmpBAL -= self.pf.getShare(key).value()
 
         self.pf.setBAL(tmpBAL)
 
-    def exit(self, verbose = False) -> None:
+    def exit(self, time: datetime, verbose = False) -> None:
         if verbose:
             print("We exit the strat.")
 
         tmpBAL = self.pf.value()
-        for share in self.pf._children:
+        for key, share in self.pf.getShares().items:
             share.setQuantity(0)
         self.pf.setTCV (tmpBAL)
         self.pf.setBAL (tmpBAL)
@@ -179,17 +208,36 @@ class positionClosed(State):
         return "No Position"
 
 # Leaf
-class Share(AbstractPortfolio):
+# Share = crypto, fx, call, put etc
+class Share(AbstractInstrument):
     _state = None
-
-    #_type="currency"
-    def __init__(self, _name, state: State, _type="currency") -> None:
+    
+    def __init__(self, _name, state: State, _type) -> None:
         super().__init__(_type, _name)
         # self.__name__ = _name #for instance BTCUSDT
         self.setState(state)
         self.__numberOfShares__ = 0
         # self.__BaseCurrentValue__ = 1 because 1 BTC = X Dollar
-        self.__QuoteCurrentValue__ = 0 #for 1 BTC = QuoteCurrentValue $
+        self.__quoteCurrentValue__ = 0 #for 1 BTC = QuoteCurrentValue $
+
+    def getShareQuantity (self):
+        return self.__numberOfShares__
+    def setShareQuantity (self, quantity: float):
+        self.__numberOfShares__ = quantity
+    def addShareQuantity(self, shareQuantity: float) -> None:
+        self.__numberOfShares__ += shareQuantity
+
+    # @abstractmethod
+    # def updateQuotation (self, listQuotations, verbose = False) -> None:
+    #     pass
+    # @abstractmethod
+    # def isKeyExists (key: string) -> bool:
+    #     pass
+
+class cryptoCurrency(Share):
+    def __init__(self, _name, state: State) -> None:
+        _type="cryptoCurrency"
+        super().__init__(_type, _name)
 
     #market value
     def getQuoteCurrentValue (self):
@@ -198,18 +246,10 @@ class Share(AbstractPortfolio):
         # value = listQuotations[__name__]
         self.__QuoteCurrentValue__ = value
 
-    def getQuantity (self):
-        return self.__numberOfShares__
-    def setQuantity (self, quantity: float):
-        self.__numberOfShares__ = quantity
-
     # method to change the state of the object
     def setState(self, state: State) -> None:
         self._state = state
         self._state.pf = self
-
-    def presentState(self) -> None:
-        print(f"Portfolio is in {type(self._state).__name__}")
 
     def getPair(self)-> str:
         return "Pair = "+self.__name__
@@ -218,19 +258,19 @@ class Share(AbstractPortfolio):
     def value(self) -> str:
         return self.__QuoteCurrentValue__*self.__numberOfShares__
 
-    def addShareQuantity(self, shareQuantity: float) -> None:
-        self.__numberOfShares__ += shareQuantity
+    def isKeyExists (self, key: string) -> bool:
+        if key != __name__:
+            return False
+        return True
 
-    def checkKey (self, key: string) -> bool:
-        return self.__name__, key == self.__name__
-
-# Composite
+# leaf of share
+#here we have a 1 period tree : 1 node + n leafs
 class Portfolio(AbstractPortfolio):
     
-    #quoteCurrency="USDT" usually
+    #quoteCurrency="USD(T)" usually
     def __init__(self, quoteCurrency: string, portfolioName: string, startingMoney: float) -> None:
         super().__init__("Portfolio", portfolioName)
-        self.__children__: List[AbstractPortfolio] = []
+        self.__Shares__: dict[Share] = {}
         # self.__portfolioName__ = portfolioName
         self.setState(positionClosed())
         self.__quoteCurrency__ = quoteCurrency
@@ -240,8 +280,12 @@ class Portfolio(AbstractPortfolio):
     def setState(self, state: State) -> None:
         self.__state__ = state
 
-    def getChildren(self) -> AbstractPortfolio:
-        return self.__children__
+    def presentState(self) -> None:
+        stateName = self.__state__#string overload operator
+        print(f"Portfolio is in {stateName}")
+
+    def getShares(self) -> Share:
+        return self.__Shares__
 
     #TCV getter setter
     def getTCV(self) -> float:
@@ -267,23 +311,28 @@ class Portfolio(AbstractPortfolio):
     def __str__(self): 
         return "Value of the portfolio = "+self.__TCV__+self.__quoteCurrency__
 
-    def add(self, abspf: AbstractPortfolio) -> None:
-        self.__children__.append(abspf)
-        abspf.parent = self
+    def add(self, share: Share) -> None:
+        key = share.getName()
+        self.__Shares__ [key] = share
+        share.parent = self
 
-    def remove(self, abspf: AbstractPortfolio) -> None:
-        self.__children__.remove(abspf)
-        abspf.parent = None
+    def remove(self, share: Share) -> None:
+        key = share.getName()
+        self.__Shares__.pop(key, None)
+        share.parent = None
 
-    def is_composite(self) -> bool:
-        return True
+    def is_Composite(self) -> bool:
+        return False
 
-    def getShare (self, key: string) -> AbstractPortfolio:
-        for i in len(self.__children__):
-            if self.__children__[i].getName() == key:
-                return self.__children__[i]
-        print("getShare error try catch, key = "+ key)
-        sys.exit()
+    def getShare (self, key: string) -> Share:
+        if self.__Shares__.has_key(key):
+            return self.__Shares__[key]
+    # overload operator for []
+    def __getitem__(self, key):
+        if self.__Shares__.has_key(key):
+            return self.__Shares__[key]
+    def __setitem__(self, key, value):
+        self.__Shares__[key] = value
 
     def getPortfolioCurrency (self) -> string:
         return self.__quoteCurrency__
@@ -292,25 +341,23 @@ class Portfolio(AbstractPortfolio):
     #it is preferable to updateValues before
     def value(self) -> float:
         tmpValue = 0
-        for child in self.__children__:
+        for key, child in self.__Shares__.items:
             tmpValue += child.value()
         return tmpValue
     
     #Update the quote value of the pairs
     def updateQuotation(self, listQuotations, verbose = False) -> None:
-        for child in self.__children__:
-            for key, value in listQuotations.items: #self.pf._children
-               if child.getName() == key:
-                    child.updateQuotation(value)
+        children = self.__Shares__
+        for key, value in listQuotations.items: #self.pf._children
+            children[key].updateQuotation(value)
 
-    #Search by induction
-    def checkKey (self, key: string) -> string, bool:
-        for i in len(self.__children__):
-            if self.__children__[i].checkKey(key):
-                name = self.__children__[i].getName()
-                return name, True #problem multiple true if by induction
+    #Search by induction if a key exists
+    def isKeyExists (self, key: string) -> bool:
+        children = self.__Shares__
+        if key in children:
+            return True #problem multiple true if by induction
         
-        return name, False
+        return False
 
 # if __name__ == "__main__":
 #     tree = Portfolio()
