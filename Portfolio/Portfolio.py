@@ -11,6 +11,13 @@ from pandas import DataFrame
 from datetime import date, datetime
 from __future__ import annotations
 
+#For importing observer pattern
+import sys
+import os
+path = os.path.abspath(os.getcwd())
+path = os.path.abspath(os.path.dirname(path))+"\designPattern\\"
+sys.path.insert(1, path)
+import observer
 
 class AbstractInstrument:
 
@@ -42,14 +49,17 @@ class AbstractInstrument:
     def value(self) -> str:
         pass
     @abstractmethod
-    def updateQuotation (self, listQuotations, verbose = False) -> None:
+    def updateMarketQuotation (self,  time: datetime, listQuotations, verbose = False) -> None:
         pass
     @abstractmethod
-    def isKeyExists (key: string) -> bool:
+    def isKeyExists (self, key: string) -> bool:
         pass
 
+    @abstractmethod
+    def report(self) -> dict:
+        pass
 
-class AbstractPortfolio(AbstractInstrument):
+class AbstractPortfolio(AbstractInstrument, Subject):
 
     def __init__(self, _type="currency", _name="generic portfolio") -> None:
         super().__init__(_type, _name)
@@ -63,50 +73,87 @@ class AbstractPortfolio(AbstractInstrument):
     def is_Composite(self) -> bool:
         return False
 
+    """
+    Observer    
+    """
+    # _state: int = None
+    __observers__: List[Observer] = []
+
+    def attach(self, observer: Observer) -> None:
+        print("Subject: Attached an observer.")
+        self.__observers__.append(observer)
+
+    def detach(self, observer: Observer) -> None:
+        self.__observers__.remove(observer)
+
+    @abstractmethod
+    def notify(self, verbose = False) -> None:        
+        pass
+    @abstractmethod
+    def report(self, verbose = False) -> dict:       
+        pass
+    
+
 class severalPortfolios(AbstractPortfolio):
-    """
-    The Composite class represents the complex components that may have
-    children. Usually, the Composite objects delegate the actual work to their
-    children and then "sum-up" the result.
-    """
 
     def __init__(self) -> None:
-        self._children: List[AbstractPortfolio] = []
+        self.__portfolio__: List[AbstractPortfolio] = []
 
-    """
-    A composite object can add or remove other components (both simple or
-    complex) to or from its child list.
-    """
 
-    def add(self, component: AbstractPortfolio) -> None:
-        self._children.append(component)
-        component.parent = self
+    def add(self, portfolio: AbstractPortfolio) -> None:
+        self.__portfolio__.append(portfolio)
+        portfolio.parent = self
 
-    def remove(self, component: AbstractPortfolio) -> None:
-        self._children.remove(component)
-        component.parent = None
+    def remove(self, porfolio: AbstractPortfolio) -> None:
+        self.__portfolio__.remove(porfolio)
+        porfolio.parent = None
 
     def is_Composite (self) -> bool:
         return True
 
-    @abstractmethod
-    def updateQuotation (self, listQuotations, verbose = False) -> None:
-        pass
-    @abstractmethod
-    def isKeyExists (key: string) -> bool:
-        pass
+    def notify(self, verbose = False) -> None:
+        if verbose:
+            print("Subject: Notifying observers...")
+        for observer in self.__observers__:
+            observer.update(self)
+
+    def updateMarketQuotation (self,  time: datetime, listQuotations, verbose = False) -> None:
+        portfolios = self.__portfolio__
+        self.__timeNow__ = time
+        for i in len(portfolios):
+            portfolios[i].updateMarketQuotation(self, time, listQuotations)
+
+    def isKeyExists (self, key: string) -> bool:
+        portfolios = self.__portfolio__
+        for i in len(portfolios):
+            portfolios[i].isKeyExists(key)
+
+    def report(self) -> dict:
+        portfolio = self.__portfolio__
+        tmpDict = {}
+        tmpDict["time"] = self.__timeNow__
+        for i in len(portfolio):
+            key = portfolio[i].getName()
+            tmpDict[key] = portfolio[i].report()
+        return tmpDict
 
 # The common state interface for all the states
 # Context = Portfolio, Share etc
 #https://auth0.com/blog/state-pattern-in-python/
 class State():
+
+    '''
+    getter and setter
+    '''
     @property#=getPf=getter
     def pf(self) -> AbstractPortfolio:
         return self._abspf
-
     @pf.setter#=setPf
     def pf(self, abspf: AbstractPortfolio) -> None:
         self._abspf = abspf
+    '''
+    getter and setter
+    '''
 
     @abstractmethod
     def entry(self, time: datetime, listInvestments: dict, listQuotation: dict, verbose = False) -> None:
@@ -159,6 +206,7 @@ class readyToTrade(State):
             tmpBAL -= self.pf.getShare(key).value()
 
         self.pf.setBAL(tmpBAL)
+        self.pf.notify()#each time we notify we send the pf
 
     def exit(self, time: datetime, verbose = False) -> None:
         if verbose:
@@ -172,6 +220,7 @@ class readyToTrade(State):
 
         #ATTENTION CHECK IF IT IS GOOD
         self.pf.setState(positionClosed())
+        self.pf.notify()#my state is now to position closed
 
     @abstractmethod
     def myStateIs (self) -> None:
@@ -227,6 +276,9 @@ class Share(AbstractInstrument):
     def addShareQuantity(self, shareQuantity: float) -> None:
         self.__numberOfShares__ += shareQuantity
 
+    def report(self) -> dict:
+        return {self.__numberOfShares__, self.value()}
+
     # @abstractmethod
     # def updateQuotation (self, listQuotations, verbose = False) -> None:
     #     pass
@@ -242,14 +294,8 @@ class cryptoCurrency(Share):
     #market value
     def getQuoteCurrentValue (self):
         return self.__QuoteCurrentValue__
-    def updateQuotation (self, value, verbose = False) -> None:
-        # value = listQuotations[__name__]
+    def updateMarketQuotation (self,  time: datetime, value, verbose = False) -> None:
         self.__QuoteCurrentValue__ = value
-
-    # method to change the state of the object
-    def setState(self, state: State) -> None:
-        self._state = state
-        self._state.pf = self
 
     def getPair(self)-> str:
         return "Pair = "+self.__name__
@@ -259,7 +305,7 @@ class cryptoCurrency(Share):
         return self.__QuoteCurrentValue__*self.__numberOfShares__
 
     def isKeyExists (self, key: string) -> bool:
-        if key != __name__:
+        if key != self.__name__:
             return False
         return True
 
@@ -346,18 +392,27 @@ class Portfolio(AbstractPortfolio):
         return tmpValue
     
     #Update the quote value of the pairs
-    def updateQuotation(self, listQuotations, verbose = False) -> None:
+    def updateMarketQuotation(self, time: datetime, listQuotations, verbose = False) -> None:
         children = self.__Shares__
         for key, value in listQuotations.items: #self.pf._children
-            children[key].updateQuotation(value)
+            if self.isKeyExists:
+                children[key].updateQuotation(time, value)
 
     #Search by induction if a key exists
     def isKeyExists (self, key: string) -> bool:
         children = self.__Shares__
         if key in children:
             return True #problem multiple true if by induction
-        
         return False
+
+    def report(self) -> dict:
+        children = self.__Shares__
+        tmpDict = {}
+        tmpDict["TCV"] = self.__TCV__
+        tmpDict["BAL"] = self.__BAL__
+        for key, child in children.items:
+            tmpDict[key] = child.report()
+        return tmpDict
 
 # if __name__ == "__main__":
 #     tree = Portfolio()
