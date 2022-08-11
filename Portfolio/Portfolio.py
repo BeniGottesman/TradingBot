@@ -46,6 +46,28 @@ class AbstractInstrument:
         return False
 
     @abstractmethod
+    def getTCV(self) -> float:
+        pass
+    @abstractmethod
+    def setTCV(self, value: float) -> None:
+        pass
+    @abstractmethod
+    def addTCV(self, value: float) -> None:
+        pass
+
+    #BAL getter setter
+    @abstractmethod
+    def getBAL(self) -> float:
+        pass
+    @abstractmethod
+    def setBAL(self, value: float) -> None:
+        pass
+    @abstractmethod
+    def addBAL(self, value: float) -> None:
+        pass
+
+
+    @abstractmethod
     def value(self) -> str:
         pass
     @abstractmethod
@@ -97,16 +119,47 @@ class AbstractPortfolio(AbstractInstrument, Subject):
 class severalPortfolios(AbstractPortfolio):
 
     def __init__(self) -> None:
-        self.__portfolio__: List[AbstractPortfolio] = []
-
+        self.__portfolios__: List[AbstractPortfolio] = []
+        self.__TCV__ = 0
+        self.__BAL__ = 0
 
     def add(self, portfolio: AbstractPortfolio) -> None:
-        self.__portfolio__.append(portfolio)
+        self.__portfolios__.append(portfolio)
+        self.__TCV__ = self.getTCV()
         portfolio.parent = self
 
     def remove(self, porfolio: AbstractPortfolio) -> None:
-        self.__portfolio__.remove(porfolio)
+        self.__TCV__ -= self.getTCV()
+        self.__portfolios__.remove(porfolio)
         porfolio.parent = None
+
+    #TCV getter setter
+    def getTCV(self) -> float:
+        tmpTCV = 0
+        for pf in self.__portfolios__:
+            tmpTCV += pf.getTCV()
+        return tmpTCV
+    def setTCV(self, value: float) -> None:
+        if value > self.getTCV():
+            self.__TCV__ = value
+    def addTCV(self, value: float) -> None:
+        self.__TCV__ += value
+
+    #BAL getter setter
+    def getBAL(self) -> float:
+        tmpBAL = 0
+        for pf in self.__portfolios__:
+            tmpBAL += pf.getBAL()
+        return tmpBAL
+    def setBAL(self, value: float) -> None:
+        if value > self.getTCV():
+            self.__BAL__ = value
+        self.__BAL__ = value
+    def addBAL(self, value: float) -> None:
+        self.__BAL__ += value
+        tmpTCV = self.getTCV()
+        if self.__BAL__ > tmpTCV:
+            self.__BAL__ = tmpTCV
 
     def is_Composite (self) -> bool:
         return True
@@ -118,23 +171,23 @@ class severalPortfolios(AbstractPortfolio):
             observer.update(self)
 
     def updateMarketQuotation (self,  time: datetime, listQuotations, verbose = False) -> None:
-        portfolios = self.__portfolio__
+        portfolios = self.__portfolios__
         self.__timeNow__ = time
         for i in len(portfolios):
             portfolios[i].updateMarketQuotation(self, time, listQuotations)
 
     def isKeyExists (self, key: string) -> bool:
-        portfolios = self.__portfolio__
+        portfolios = self.__portfolios__
         for i in len(portfolios):
             portfolios[i].isKeyExists(key)
 
     def report(self) -> dict:
-        portfolio = self.__portfolio__
+        portfolios = self.__portfolios__
         tmpDict = {}
         tmpDict["time"] = self.__timeNow__
-        for i in len(portfolio):
-            key = portfolio[i].getName()
-            tmpDict[key] = portfolio[i].report()
+        for i in len(portfolios):
+            key = portfolios[i].getName()
+            tmpDict[key] = portfolios[i].report()
         return tmpDict
 
 # The common state interface for all the states
