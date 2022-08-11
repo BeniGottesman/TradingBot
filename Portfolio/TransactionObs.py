@@ -30,11 +30,8 @@ class GraphTCVViewer(Observer):
     def update(self, subject: AbstractPortfolio) -> None:
         report = subject.report()
         self.xs.append (report["time"]) #time
-        for key, value in report.items:
-            if key == "time":
-                continue
-            self.TCV.append (value[key].getTCV())
-            self.BAL.append (value[key].getBAL())
+        self.TCV.append (report["BAL"])
+        self.BAL.append (report["TCV"])
 
     def plot(self) -> None:
         plt.plot(self.xs, self.TCV)

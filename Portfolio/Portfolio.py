@@ -139,11 +139,13 @@ class severalPortfolios(AbstractPortfolio):
         for pf in self.__portfolios__:
             tmpTCV += pf.getTCV()
         return tmpTCV
+    # WARNING WHEN USE IT
     def setTCV(self, value: float) -> None:
         if value > self.getTCV():
             self.__TCV__ = value
     def addTCV(self, value: float) -> None:
         self.__TCV__ += value
+    # WARNING WHEN USE IT
 
     #BAL getter setter
     def getBAL(self) -> float:
@@ -151,8 +153,10 @@ class severalPortfolios(AbstractPortfolio):
         for pf in self.__portfolios__:
             tmpBAL += pf.getBAL()
         return tmpBAL
+    # WARNING WHEN USE IT
+    #LA TCV EVOLUE INDEPENDEMMENT DE LA BAL
     def setBAL(self, value: float) -> None:
-        if value > self.getTCV():
+        if value > self.getTCV():#SAUF CAS PARTICULIER OU BAL>TCV ...
             self.__BAL__ = value
         self.__BAL__ = value
     def addBAL(self, value: float) -> None:
@@ -160,6 +164,7 @@ class severalPortfolios(AbstractPortfolio):
         tmpTCV = self.getTCV()
         if self.__BAL__ > tmpTCV:
             self.__BAL__ = tmpTCV
+    # WARNING WHEN USE IT
 
     def is_Composite (self) -> bool:
         return True
@@ -185,6 +190,9 @@ class severalPortfolios(AbstractPortfolio):
         portfolios = self.__portfolios__
         tmpDict = {}
         tmpDict["time"] = self.__timeNow__
+        tmpDict["TCV"] = self.__BAL__
+        tmpDict["BAL"] = self.__TCV__
+        
         for i in len(portfolios):
             key = portfolios[i].getName()
             tmpDict[key] = portfolios[i].report()
