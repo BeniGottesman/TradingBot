@@ -252,10 +252,11 @@ class Portfolio(AbstractPortfolio):
         super().__init__("Portfolio", portfolioName)
         self.__Shares__: dict[Share] = {}
         # self.__portfolioName__ = portfolioName
-        self.setState(pfstate.PortfolioIsReady())
         self.__quoteCurrency__ = quoteCurrency
         self.__BAL__ = self.setBAL (abs(startingMoney))
         self.__TCV__ = self.setTCV (abs(startingMoney))
+        self.setState(pfstate.PortfolioIsReady())
+        self.__ID__ = 0
 
     def setState(self, state: pfstate.PortfolioState) -> None:
         self.__state__ = state
@@ -269,6 +270,12 @@ class Portfolio(AbstractPortfolio):
 
     def getShares(self) -> Share:
         return self.__Shares__
+
+    def setID (self, value : int) -> None:
+        if value > 0:
+            self.__ID__ = value
+    def addID (self) -> int:
+        return self.__ID__
 
     #TCV getter setter
     def getTCV(self) -> float:

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import random
 import string
 from sys import maxsize
-from typing import List
+# from typing import List
 import Strategy.Strategy as st
 import Portfolio.Portfolio as pf
 
@@ -18,14 +18,14 @@ class severalMediator(mediator):
         #we command the portfolio from strategy
         self.__strategy__: dict[strat] = {}
 
-    def add (self, strategy:st.Strategy, portfolio: pf.AbstractPortfolio) -> None:
+    def load (self, strategy:st.Strategy, portfolio: pf.AbstractPortfolio) -> None:
         tmp = strat(strategy, portfolio)
         key = tmp.getID()
         self.__strategy__[key] = tmp
 
-    def remove (self, stratID: int) -> None:
-        delThis = self.__strategy__[stratID]
-        self.__strategy__.remove (delThis) 
+    def unload (self, stratID: int) -> None:
+        if self.__strategy__.has_key(stratID):
+            del self.__strategy__ [stratID]
 
     def execute(self, pf: pf.AbstractPortfolio, data: List):
         i = 0
@@ -38,7 +38,8 @@ class strat(mediator):
         #we command the portfolio from strategy
         self.__strategy__  = strategy
         self.__portfolio__ = portfolio
-        self.__name__ = random.randint(0, maxsize)
+        self.__name__ = random.randint(1, maxsize) #unique
+        portfolio.setID(self.__name__)
 
     def getID(self) -> int:
         return self.__name__
