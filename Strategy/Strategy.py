@@ -16,8 +16,9 @@ class Strategy():
 ######################################
 #We implement a command pattern to make the mediation
 #Between strategy and portfolio
-class StrategyCommand(ABC):
+class StrategyCommandPortfolio(ABC):
     def __init__(self, portfolio: pf.AbstractPortfolio) -> None:
+        #we command the portfolio from strategy
         self._portfolio = portfolio
 
     @property#=getPf=getter
@@ -37,7 +38,7 @@ class StrategyCommand(ABC):
         pass
 
 
-class BacktestCommand(StrategyCommand):
+class BacktestCommand(StrategyCommandPortfolio):
 
     def __init__(self, portfolio: pf.AbstractPortfolio) -> None:
         super().__init__(portfolio)

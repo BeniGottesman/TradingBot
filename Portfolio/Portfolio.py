@@ -108,7 +108,9 @@ class AbstractPortfolio(AbstractInstrument, obs.Subject):
     @abstractmethod
     def report(self, verbose = False) -> dict:       
         pass
-    
+    @abstractmethod
+    def printPresentState(self) -> None:
+        pass
 
 class severalPortfolios(AbstractPortfolio):
 
@@ -192,14 +194,17 @@ class severalPortfolios(AbstractPortfolio):
             tmpDict[key] = portfolios[i].report()
         return tmpDict
 
+    def printPresentState(self) -> None:
+        portfolios = self.__portfolios__
+        for i in len(portfolios):
+            portfolios[i].printPresentState()
 # Leaf
 # Share = crypto, fx, call, put etc
 class Share(AbstractInstrument):
-    _state = None
-    
+
+    # self.__name__ = for instance BTCUSDT
     def __init__(self, _name, _type) -> None:
         super().__init__(_type, _name)
-        # self.__name__ = _name #for instance BTCUSDT
         self.__numberOfShares__ = 0
         # self.__BaseCurrentValue__ = 1 because 1 BTC = X Dollar
         self.__quoteCurrentValue__ = 0 #for 1 BTC = QuoteCurrentValue $
@@ -254,12 +259,13 @@ class Portfolio(AbstractPortfolio):
 
     def setState(self, state: pfstate.PortfolioState) -> None:
         self.__state__ = state
-    def getState(self, state: pfstate.PortfolioState) -> None:
+    def getState(self, state: pfstate.PortfolioState):
         return self.__state__
 
-    def presentState(self) -> None:
+    def printPresentState(self) -> None:
         stateName = self.__state__#string overload operator
-        print(f"Portfolio is in {stateName}")
+        pfName = self.__name__
+        print(f"Portfolio {pfName} is in {stateName}")
 
     def getShares(self) -> Share:
         return self.__Shares__
