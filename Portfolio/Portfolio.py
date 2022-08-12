@@ -10,14 +10,8 @@ import numpy as np
 from pandas import DataFrame
 from datetime import date, datetime
 from __future__ import annotations
-
-#For importing observer pattern
-import sys
-import os
-path = os.path.abspath(os.getcwd())
-path = os.path.abspath(os.path.dirname(path))+"\designPattern\\"
-sys.path.insert(1, path)
-import observer
+import PfState as pfstate
+import designPattern.observer as obs
 
 class AbstractInstrument:
 
@@ -81,7 +75,7 @@ class AbstractInstrument:
     def report(self) -> dict:
         pass
 
-class AbstractPortfolio(AbstractInstrument, Subject):
+class AbstractPortfolio(AbstractInstrument, obs.Subject):
 
     def __init__(self, _type="currency", _name="generic portfolio") -> None:
         super().__init__(_type, _name)
@@ -99,13 +93,13 @@ class AbstractPortfolio(AbstractInstrument, Subject):
     Observer    
     """
     # _state: int = None
-    __observers__: List[Observer] = []
+    __observers__: List[obs.Observer] = []
 
-    def attach(self, observer: Observer) -> None:
+    def attach(self, observer: obs.Observer) -> None:
         print("Subject: Attached an observer.")
         self.__observers__.append(observer)
 
-    def detach(self, observer: Observer) -> None:
+    def detach(self, observer: obs.Observer) -> None:
         self.__observers__.remove(observer)
 
     @abstractmethod
@@ -198,134 +192,14 @@ class severalPortfolios(AbstractPortfolio):
             tmpDict[key] = portfolios[i].report()
         return tmpDict
 
-# The common state interface for all the states
-# Context = Portfolio, Share etc
-#https://auth0.com/blog/state-pattern-in-python/
-class State():
-
-    '''
-    getter and setter
-    '''
-    @property#=getPf=getter
-    def pf(self) -> AbstractPortfolio:
-        return self._abspf
-    @pf.setter#=setPf
-    def pf(self, abspf: AbstractPortfolio) -> None:
-        self._abspf = abspf
-    '''
-    getter and setter
-    '''
-
-    @abstractmethod
-    def entry(self, time: datetime, listInvestments: dict, listQuotation: dict, verbose = False) -> None:
-        pass
-    
-    def updateValues(self, listQuotations: dict) -> None:
-        pass
-
-    @abstractmethod
-    def exit(self, time: datetime, listQuotation: dict, verbose = False) -> None:
-        pass
-
-    @abstractmethod
-    def myStateIs (self) -> None:
-        pass
-
-    @abstractmethod
-    def __str__(self): 
-        pass
-
-# The common state interface for all the states
-class readyToTrade(State):
-
-    @property#=getPf=getter
-    def pf(self) -> Portfolio:
-        return self._pf
-
-    @pf.setter#=setPf
-    def pf(self, pf: Portfolio) -> None:
-        self._abspf = pf
-
-    #REVOIR LALGO
-    def entry(self, time: datetime, listInvestments: dict, verbose = False) -> None:
-        if verbose:
-            print("We entry the strat.")
-
-        tmpBAL = self.pf.getBAL()
-        if tmpBAL <= 0:
-            print("No money in BAL = "+tmpBAL)
-            return
-        
-        for key, quantity in listInvestments.items: #self.pf._children
-            if not self.pf.isKeyExists(key):
-                newShare = Share(key, quantity)#(key, quantity, time)
-                self.pf.add(newShare)
-            else:
-                # child.addShareQuantity(time, quantity) and add to a dict
-                share = self.pf.getShare(key)
-                share.addShareQuantity(quantity)
-            tmpBAL -= self.pf.getShare(key).value()
-
-        self.pf.setBAL(tmpBAL)
-        self.pf.notify()#each time we notify we send the pf
-
-    def exit(self, time: datetime, verbose = False) -> None:
-        if verbose:
-            print("We exit the strat.")
-
-        tmpBAL = self.pf.value()
-        for key, share in self.pf.getShares().items:
-            share.setQuantity(0)
-        self.pf.setTCV (tmpBAL)
-        self.pf.setBAL (tmpBAL)
-
-        #ATTENTION CHECK IF IT IS GOOD
-        self.pf.setState(positionClosed())
-        self.pf.notify()#my state is now to position closed
-
-    @abstractmethod
-    def myStateIs (self) -> None:
-        pass
-
-class LongPortfolio(readyToTrade):
-    def myStateIs (self) -> None:
-        _type = self._abspf.getType()
-        print("The "+_type+" is Long")
-
-    def __str__(self): 
-        return "Long"
-
-class ShortPortfolio(readyToTrade):
-    def myStateIs (self) -> None:
-        _type = self._abspf.getType()
-        print("The "+_type+" is Short")
-
-    def __str__(self): 
-        return "Short"
-
-class positionClosed(State):
-    def entry(self) -> None:
-        print("Entry : Actually No Strat")
-
-    def exit(self) -> None:
-        print("Exit : Actually No Strat")
-
-    def myStateIs (self) -> None:
-        _type = self._abspf.getType()
-        print("myStateIs : Actually No Strat with "+_type)
-
-    def __str__(self): 
-        return "No Position"
-
 # Leaf
 # Share = crypto, fx, call, put etc
 class Share(AbstractInstrument):
     _state = None
     
-    def __init__(self, _name, state: State, _type) -> None:
+    def __init__(self, _name, _type) -> None:
         super().__init__(_type, _name)
         # self.__name__ = _name #for instance BTCUSDT
-        self.setState(state)
         self.__numberOfShares__ = 0
         # self.__BaseCurrentValue__ = 1 because 1 BTC = X Dollar
         self.__quoteCurrentValue__ = 0 #for 1 BTC = QuoteCurrentValue $
@@ -340,15 +214,9 @@ class Share(AbstractInstrument):
     def report(self) -> dict:
         return {self.__numberOfShares__, self.value()}
 
-    # @abstractmethod
-    # def updateQuotation (self, listQuotations, verbose = False) -> None:
-    #     pass
-    # @abstractmethod
-    # def isKeyExists (key: string) -> bool:
-    #     pass
 
 class cryptoCurrency(Share):
-    def __init__(self, _name, state: State) -> None:
+    def __init__(self, _name) -> None:
         _type="cryptoCurrency"
         super().__init__(_type, _name)
 
@@ -379,13 +247,15 @@ class Portfolio(AbstractPortfolio):
         super().__init__("Portfolio", portfolioName)
         self.__Shares__: dict[Share] = {}
         # self.__portfolioName__ = portfolioName
-        self.setState(positionClosed())
+        self.setState(pfstate.PortfolioIsReady())
         self.__quoteCurrency__ = quoteCurrency
-        self.__BAL__ = abs(startingMoney)
-        self.__TCV__ = abs(startingMoney)
+        self.__BAL__ = self.setBAL (abs(startingMoney))
+        self.__TCV__ = self.setTCV (abs(startingMoney))
 
-    def setState(self, state: State) -> None:
+    def setState(self, state: pfstate.PortfolioState) -> None:
         self.__state__ = state
+    def getState(self, state: pfstate.PortfolioState) -> None:
+        return self.__state__
 
     def presentState(self) -> None:
         stateName = self.__state__#string overload operator
@@ -398,6 +268,10 @@ class Portfolio(AbstractPortfolio):
     def getTCV(self) -> float:
         return self.__TCV__
     def setTCV(self, value: float) -> None:
+        if value <= 0 and self.getState != "STOPPED":
+            self.setState(pfstate.PortfolioIsStopped)
+        elif self.getState() != "READY":
+            self.setState(pfstate.PortfolioIsReady)    
         self.__TCV__ = value
     def addTCV(self, value: float) -> None:
         self.__TCV__ += value
@@ -406,9 +280,21 @@ class Portfolio(AbstractPortfolio):
     def getBAL(self) -> float:
         return self.__BAL__
     def setBAL(self, value: float) -> None:
+        if value <= 0:
+            if self.getTCV() <= 0:
+                self.setState(pfstate.PortfolioIsStopped)
+            else:
+                self.setState(pfstate.NoMoneyInBAL)
+        elif self.getState() != "READY":
+            self.setState(pfstate.PortfolioIsReady)        
         self.__BAL__ = value
     def addBAL(self, value: float) -> None:
         self.__BAL__ += value
+        if self.__BAL__ <= 0:
+            if self.getTCV() <= 0:
+                self.setState(pfstate.PortfolioIsStopped)
+            else:
+                self.setState(pfstate.NoMoneyInBAL)
 
     # operator overloading
     # add two portfolios
