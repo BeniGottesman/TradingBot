@@ -10,8 +10,14 @@ import numpy as np
 from pandas import DataFrame
 from datetime import date, datetime
 from __future__ import annotations
-import PfState as pfstate
 import designPattern.observer as obs
+
+#For importing observer pattern
+import sys
+import os
+path = os.path.abspath(os.getcwd())
+path = os.path.abspath(os.path.dirname(path))+"\designPattern\\"
+sys.path.insert(1, path)
 
 class AbstractInstrument:
 
@@ -108,9 +114,7 @@ class AbstractPortfolio(AbstractInstrument, obs.Subject):
     @abstractmethod
     def report(self, verbose = False) -> dict:       
         pass
-    @abstractmethod
-    def printPresentState(self) -> None:
-        pass
+    
 
 class severalPortfolios(AbstractPortfolio):
 
@@ -194,17 +198,17 @@ class severalPortfolios(AbstractPortfolio):
             tmpDict[key] = portfolios[i].report()
         return tmpDict
 
-    def printPresentState(self) -> None:
-        portfolios = self.__portfolios__
-        for i in len(portfolios):
-            portfolios[i].printPresentState()
+
+
 # Leaf
 # Share = crypto, fx, call, put etc
 class Share(AbstractInstrument):
-
-    # self.__name__ = for instance BTCUSDT
+    _state = None
+    
     def __init__(self, _name, _type) -> None:
         super().__init__(_type, _name)
+        # self.__name__ = _name #for instance BTCUSDT
+        self.setState(state)
         self.__numberOfShares__ = 0
         # self.__BaseCurrentValue__ = 1 because 1 BTC = X Dollar
         self.__quoteCurrentValue__ = 0 #for 1 BTC = QuoteCurrentValue $
@@ -219,6 +223,12 @@ class Share(AbstractInstrument):
     def report(self) -> dict:
         return {self.__numberOfShares__, self.value()}
 
+    # @abstractmethod
+    # def updateQuotation (self, listQuotations, verbose = False) -> None:
+    #     pass
+    # @abstractmethod
+    # def isKeyExists (key: string) -> bool:
+    #     pass
 
 class cryptoCurrency(Share):
     def __init__(self, _name) -> None:
@@ -252,39 +262,25 @@ class Portfolio(AbstractPortfolio):
         super().__init__("Portfolio", portfolioName)
         self.__Shares__: dict[Share] = {}
         # self.__portfolioName__ = portfolioName
+        self.setState(positionClosed())
         self.__quoteCurrency__ = quoteCurrency
-        self.__BAL__ = self.setBAL (abs(startingMoney))
-        self.__TCV__ = self.setTCV (abs(startingMoney))
-        self.setState(pfstate.PortfolioIsReady())
-        self.__ID__ = 0
+        self.__BAL__ = abs(startingMoney)
+        self.__TCV__ = abs(startingMoney)
 
-    def setState(self, state: pfstate.PortfolioState) -> None:
+    def setState(self, state: State) -> None:
         self.__state__ = state
-    def getState(self, state: pfstate.PortfolioState):
-        return self.__state__
 
-    def printPresentState(self) -> None:
+    def presentState(self) -> None:
         stateName = self.__state__#string overload operator
-        pfName = self.__name__
-        print(f"Portfolio {pfName} is in {stateName}")
+        print(f"Portfolio is in {stateName}")
 
     def getShares(self) -> Share:
         return self.__Shares__
-
-    def setID (self, value : int) -> None:
-        if value > 0:
-            self.__ID__ = value
-    def addID (self) -> int:
-        return self.__ID__
 
     #TCV getter setter
     def getTCV(self) -> float:
         return self.__TCV__
     def setTCV(self, value: float) -> None:
-        if value <= 0 and self.getState != "STOPPED":
-            self.setState(pfstate.PortfolioIsStopped)
-        elif self.getState() != "READY":
-            self.setState(pfstate.PortfolioIsReady)    
         self.__TCV__ = value
     def addTCV(self, value: float) -> None:
         self.__TCV__ += value
@@ -293,21 +289,9 @@ class Portfolio(AbstractPortfolio):
     def getBAL(self) -> float:
         return self.__BAL__
     def setBAL(self, value: float) -> None:
-        if value <= 0:
-            if self.getTCV() <= 0:
-                self.setState(pfstate.PortfolioIsStopped)
-            else:
-                self.setState(pfstate.NoMoneyInBAL)
-        elif self.getState() != "READY":
-            self.setState(pfstate.PortfolioIsReady)        
         self.__BAL__ = value
     def addBAL(self, value: float) -> None:
         self.__BAL__ += value
-        if self.__BAL__ <= 0:
-            if self.getTCV() <= 0:
-                self.setState(pfstate.PortfolioIsStopped)
-            else:
-                self.setState(pfstate.NoMoneyInBAL)
 
     # operator overloading
     # add two portfolios
@@ -317,11 +301,12 @@ class Portfolio(AbstractPortfolio):
     def __str__(self): 
         return "Value of the portfolio = "+self.__TCV__+self.__quoteCurrency__
 
+    #add share
     def add(self, share: Share) -> None:
         key = share.getName()
         self.__Shares__ [key] = share
         share.parent = self
-
+    #remove share
     def remove(self, share: Share) -> None:
         key = share.getName()
         self.__Shares__.pop(key, None)

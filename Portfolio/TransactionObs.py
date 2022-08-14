@@ -5,15 +5,17 @@ import random
 import time
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import designPattern.observer as obs
+import Portfolio.Portfolio as pf
 
-class TransactionsViewer(Observer):
+class TransactionsViewer(obs.Observer):
     def __init__(self) -> None:
         self.__transaction__ : List[dict] = []
 
-    def update(self, subject: AbstractPortfolio) -> None:
+    def update(self, subject: pf.AbstractPortfolio) -> None:
         self.__transaction__.append(subject.report())
 
-class GraphTCVViewer(Observer):
+class GraphTCVViewer(obs.Observer):
     def __init__(self) -> None:
         self.fig = plt.figure()
         self.ax1 = self.fig.add_subplot(1,1,1)
@@ -27,7 +29,7 @@ class GraphTCVViewer(Observer):
         plt.ylabel('TCV')
         plt.title('TCV Graph')
 
-    def update(self, subject: AbstractPortfolio) -> None:
+    def update(self, subject: pf.AbstractPortfolio) -> None:
         report = subject.report()
         self.xs.append (report["time"]) #time
         self.TCV.append (report["BAL"])

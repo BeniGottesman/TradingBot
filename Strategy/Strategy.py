@@ -9,7 +9,7 @@ import datetime
 class Strategy():
     
     @abstractmethod
-    def doAlgorithm(self, pf: pf.AbstractPortfolio, data: List):
+    def doAlgorithm(self, pf: pf.AbstractPortfolio, data: List, verbose = False):
         pass
 
 

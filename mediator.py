@@ -6,20 +6,21 @@ from sys import maxsize
 import Strategy.Strategy as st
 import Portfolio.Portfolio as pf
 
+#It is a mediator between Strat and portfolio
 class mediator():
 
     @abstractmethod
     def execute(self, pf: pf.AbstractPortfolio, data: List):
         pass
 
-class severalMediator(mediator):
+class severalTrading(mediator):
 
     def __init__(self, portfolio: pf.AbstractPortfolio) -> None:
         #we command the portfolio from strategy
-        self.__strategy__: dict[strat] = {}
+        self.__strategy__: dict[Trading] = {}
 
     def load (self, strategy:st.Strategy, portfolio: pf.AbstractPortfolio) -> None:
-        tmp = strat(strategy, portfolio)
+        tmp = Trading(strategy, portfolio)
         key = tmp.getID()
         self.__strategy__[key] = tmp
 
@@ -32,7 +33,7 @@ class severalMediator(mediator):
         for i in len(self.__mediators__):
             self.__mediators__.execute()
 
-class strat(mediator):
+class Trading (mediator):
 
     def __init__(self, strategy:st.Strategy, portfolio: pf.AbstractPortfolio) -> None:
         #we command the portfolio from strategy
