@@ -42,8 +42,9 @@ class JohannsenClassic(st.Strategy):
         spreadWeights = spreadWeights/spreadWeights[0] #normalisation
 
         # spread  = np.dot(pd_lr_price_series.values, v[1,:])
-        mu      = np.mean (np.dot(log_return.values, spreadWeights[1,:]))
-        sigma   = np.var (np.dot(log_return.values, spreadWeights[1,:]))
+        mu      = np.mean (np.dot(log_return.values, spreadWeights))
+        sigma   = np.var (np.dot(log_return.values, spreadWeights))
+        spread = np.dot(log_return.values, spreadWeights)
 
         # Once I obtain the spread
         # I check the state of the pf
@@ -56,11 +57,16 @@ class JohannsenClassic(st.Strategy):
         pfState = portfolio.getState()
         if pfState == "Ready":
             if presentState == "WaitToEntry":
-                if S < mu-c*sigma: #we start the strategy
+                if spread[-1] < mu-c*sigma: #we start the Long strategy
                     self.__backtest__.entry(howMuchToInvestWeights)
-                    self.__state__ = state.StrategyWaitToExit()
+                if spread[-1] > mu-c*sigma: #we start the Short strategy
+                    self.__backtest__.entry(howMuchToInvestWeights)
+                self.__state__ = state.StrategyWaitToExit()
             if presentState == "WaitToExit":
-                if S > mu+c*sigma: #we exit the strategy
+                if spread[-1] < mu-c*sigma: #we exit the Short strategy
+                    self.__backtest__.exit()
+                    self.__state__ = state.StrategyWaitToEntry()
+                if spread[-1] > mu+c*sigma: #we exit the long strategy
                     self.__backtest__.exit()
                     self.__state__ = state.StrategyWaitToEntry()
                 elif howMuchToInvestWeights-weightArrayOfShares > error:
