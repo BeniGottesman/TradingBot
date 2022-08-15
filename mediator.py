@@ -35,7 +35,7 @@ class severalTrading(mediator):
 
 class Trading (mediator):
 
-    def __init__(self, strategy:st.Strategy, portfolio: pf.AbstractPortfolio) -> None:
+    def __init__(self, strategy: st.Strategy, portfolio: pf.AbstractPortfolio) -> None:
         #we command the portfolio from strategy
         self.__strategy__  = strategy
         self.__portfolio__ = portfolio

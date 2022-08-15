@@ -50,7 +50,7 @@ class BacktestCommand(StrategyCommandPortfolio):
 
         tmpBAL = self._portfolio.getBAL()
         if tmpBAL <= 0:
-            if self.pf.getState != "STOPPED":
+            if self.pf.getState() != "STOPPED":
                 self.pf.setState(pfstate.PortfolioIsStopped)
             print("No money in BAL = "+tmpBAL)
             return

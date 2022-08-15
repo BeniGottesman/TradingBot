@@ -5,83 +5,15 @@
 from abc import abstractmethod
 import string
 from typing import List
-from matplotlib import pyplot as plt
 import numpy as np
-from pandas import DataFrame
-from datetime import date, datetime
+from datetime import datetime
 from __future__ import annotations
 import designPattern.observer as obs
+import Portfolio.PfState as state
+import Portfolio.Share as share
+import Portfolio.AbstractInstrument as ai
 
-#For importing observer pattern
-import sys
-import os
-path = os.path.abspath(os.getcwd())
-path = os.path.abspath(os.path.dirname(path))+"\designPattern\\"
-sys.path.insert(1, path)
-
-class AbstractInstrument:
-
-    def __init__(self, _type="currency", _name="generic portfolio") -> None:
-        self.__type__ = _type
-        self.__name__ = _name
-
-    @property
-    def parent(self) -> AbstractInstrument:
-        return self._parent
-
-    @parent.setter
-    def parent(self, parent: AbstractInstrument):
-        self._parent = parent
-
-    """
-    Return the Type : Portfolio, share, asset, currency etc
-    """
-    def getType (self) -> string:
-        return self.__type__
-
-    def getName (self) -> string:
-        return self.__name__
-
-    def is_Composite(self) -> bool:
-        return False
-
-    @abstractmethod
-    def getTCV(self) -> float:
-        pass
-    @abstractmethod
-    def setTCV(self, value: float) -> None:
-        pass
-    @abstractmethod
-    def addTCV(self, value: float) -> None:
-        pass
-
-    #BAL getter setter
-    @abstractmethod
-    def getBAL(self) -> float:
-        pass
-    @abstractmethod
-    def setBAL(self, value: float) -> None:
-        pass
-    @abstractmethod
-    def addBAL(self, value: float) -> None:
-        pass
-
-
-    @abstractmethod
-    def value(self) -> str:
-        pass
-    @abstractmethod
-    def updateMarketQuotation (self,  time: datetime, listQuotations, verbose = False) -> None:
-        pass
-    @abstractmethod
-    def isKeyExists (self, key: string) -> bool:
-        pass
-
-    @abstractmethod
-    def report(self) -> dict:
-        pass
-
-class AbstractPortfolio(AbstractInstrument, obs.Subject):
+class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
 
     def __init__(self, _type="currency", _name="generic portfolio") -> None:
         super().__init__(_type, _name)
@@ -107,6 +39,10 @@ class AbstractPortfolio(AbstractInstrument, obs.Subject):
 
     def detach(self, observer: obs.Observer) -> None:
         self.__observers__.remove(observer)
+
+    @abstractmethod
+    def getWeightArrayOfShares (self) -> np.array:
+        pass
 
     @abstractmethod
     def notify(self, verbose = False) -> None:        
@@ -146,6 +82,12 @@ class severalPortfolios(AbstractPortfolio):
     def addTCV(self, value: float) -> None:
         self.__TCV__ += value
     # WARNING WHEN USE IT
+
+    def getWeightArrayOfShares (self) -> np.array:
+        tmpArray = np.array()
+        for pf in self.__portfolios__:
+             tmpArray = np.append(tmpArray, pf.getWeightArrayOfShares())
+        return tmpArray
 
     #BAL getter setter
     def getBAL(self) -> float:
@@ -198,61 +140,6 @@ class severalPortfolios(AbstractPortfolio):
             tmpDict[key] = portfolios[i].report()
         return tmpDict
 
-
-
-# Leaf
-# Share = crypto, fx, call, put etc
-class Share(AbstractInstrument):
-    _state = None
-    
-    def __init__(self, _name, _type) -> None:
-        super().__init__(_type, _name)
-        # self.__name__ = _name #for instance BTCUSDT
-        self.setState(state)
-        self.__numberOfShares__ = 0
-        # self.__BaseCurrentValue__ = 1 because 1 BTC = X Dollar
-        self.__quoteCurrentValue__ = 0 #for 1 BTC = QuoteCurrentValue $
-
-    def getShareQuantity (self):
-        return self.__numberOfShares__
-    def setShareQuantity (self, quantity: float):
-        self.__numberOfShares__ = quantity
-    def addShareQuantity(self, shareQuantity: float) -> None:
-        self.__numberOfShares__ += shareQuantity
-
-    def report(self) -> dict:
-        return {self.__numberOfShares__, self.value()}
-
-    # @abstractmethod
-    # def updateQuotation (self, listQuotations, verbose = False) -> None:
-    #     pass
-    # @abstractmethod
-    # def isKeyExists (key: string) -> bool:
-    #     pass
-
-class cryptoCurrency(Share):
-    def __init__(self, _name) -> None:
-        _type="cryptoCurrency"
-        super().__init__(_type, _name)
-
-    #market value
-    def getQuoteCurrentValue (self):
-        return self.__QuoteCurrentValue__
-    def updateMarketQuotation (self,  time: datetime, value, verbose = False) -> None:
-        self.__QuoteCurrentValue__ = value
-
-    def getPair(self)-> str:
-        return "Pair = "+self.__name__
-
-    #return the value hold in $
-    def value(self) -> str:
-        return self.__QuoteCurrentValue__*self.__numberOfShares__
-
-    def isKeyExists (self, key: string) -> bool:
-        if key != self.__name__:
-            return False
-        return True
-
 # leaf of share
 #here we have a 1 period tree : 1 node + n leafs
 class Portfolio(AbstractPortfolio):
@@ -260,21 +147,22 @@ class Portfolio(AbstractPortfolio):
     #quoteCurrency="USD(T)" usually
     def __init__(self, quoteCurrency: string, portfolioName: string, startingMoney: float) -> None:
         super().__init__("Portfolio", portfolioName)
-        self.__Shares__: dict[Share] = {}
+        self.__Shares__: dict[share.Share] = {}
+        self.__numberOfShares__ = 0
         # self.__portfolioName__ = portfolioName
-        self.setState(positionClosed())
+        self.setState(state.PortfolioIsReady())
         self.__quoteCurrency__ = quoteCurrency
         self.__BAL__ = abs(startingMoney)
         self.__TCV__ = abs(startingMoney)
 
-    def setState(self, state: State) -> None:
+    def setState(self, state: state.State) -> None:
         self.__state__ = state
 
     def presentState(self) -> None:
         stateName = self.__state__#string overload operator
         print(f"Portfolio is in {stateName}")
 
-    def getShares(self) -> Share:
+    def getShares(self) -> share.Share:
         return self.__Shares__
 
     #TCV getter setter
@@ -294,28 +182,40 @@ class Portfolio(AbstractPortfolio):
         self.__BAL__ += value
 
     # operator overloading
-    # add two portfolios
+    # add two portfolios TCV
     def __add__(self, other): 
         return self.getTCV()+other.getTCV()
 
     def __str__(self): 
         return "Value of the portfolio = "+self.__TCV__+self.__quoteCurrency__
 
+    def getNumberOfShares(self):
+        return self.__numberOfShares__
+        
     #add share
-    def add(self, share: Share) -> None:
+    def add(self, share: share.Share) -> None:
         key = share.getName()
         self.__Shares__ [key] = share
-        share.parent = self
+        share.parent = self #?
+        self.__numberOfShares__ += 1
     #remove share
-    def remove(self, share: Share) -> None:
+    def remove(self, share: share.Share) -> None:
         key = share.getName()
         self.__Shares__.pop(key, None)
-        share.parent = None
+        share.parent = None #?
+        self.__numberOfShares__ -= 1
 
     def is_Composite(self) -> bool:
         return False
 
-    def getShare (self, key: string) -> Share:
+    def getWeightArrayOfShares (self) -> np.array:
+        tmpArray = np.array()
+        for key, value in self.__Shares__.items:
+            qty = value.getShareQuantity()
+            tmpArray = np.append(tmpArray, qty)
+        return tmpArray
+
+    def getShare (self, key: string) -> share.Share:
         if self.__Shares__.has_key(key):
             return self.__Shares__[key]
     # overload operator for []

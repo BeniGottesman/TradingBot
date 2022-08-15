@@ -5,7 +5,8 @@ from statsmodels.tsa.vector_ar.vecm import coint_johansen
 #https://www.statsmodels.org/stable/examples/notebooks/generated/stationarity_detrending_adf_kpss.html?highlight=adf
 from statsmodels.tsa.stattools import adfuller
 
-
+#https://www.statsmodels.org/dev/generated/statsmodels.tsa.vector_ar.vecm.coint_johansen.html
+#y = array_like (nobs_tot x neqs)
 def get_johansen(y, p):
 
         """

@@ -5,7 +5,7 @@ import Portfolio.Portfolio as pf
 # The common state interface for all the states
 # Context = Portfolio, Share etc
 #https://auth0.com/blog/state-pattern-in-python/
-class PortfolioState(state):
+class StrategyState(state):
 
     @abstractmethod
     def myStateIs (self) -> None:
@@ -15,32 +15,22 @@ class PortfolioState(state):
     def __str__(self): 
         pass
 
-class PortfolioIsReady (PortfolioState):
+class StrategyWaitToEntry (StrategyState):
     def __str__(self): 
-        return "READY"
+        return "waitToEntry"
 
     def myStateIs (self) -> None:
-        print ("Ready")
-    
-    def getState (self) -> None:
-        return "READY"
+        print ("Strategy : Wait for an entry Signal")
 
-class NoMoneyInBAL (PortfolioState):
+    def getState (self) -> None:
+        return "WaitToEntry"
+
+class StrategyWaitToExit (StrategyState):
     def __str__(self): 
-        return "No Money in BAL"
+        return "WaitToExit"
 
     def myStateIs (self) -> None:
-        print ("No Money in BAL")
+        print ("Strategy : Wait for an exit Signal")
     
     def getState (self) -> None:
-        return "No Money in BAL"
-
-class PortfolioIsStopped (PortfolioState):
-    def __str__(self): 
-        return "STOPPED"
-
-    def myStateIs (self) -> None:
-        print ("Stopped")
-    
-    def getState (self) -> None:
-        return "STOPPED"
+        return "waitToExit"
