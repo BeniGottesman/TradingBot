@@ -150,63 +150,81 @@ class Portfolio(AbstractPortfolio):
         self.__Shares__: dict[share.Share] = {}
         self.__numberOfShares__ = 0
         # self.__portfolioName__ = portfolioName
-        self.setState(state.PortfolioIsReady())
+        self.__state__ = state.PortfolioIsReady()
         self.__quoteCurrency__ = quoteCurrency
         self.__BAL__ = abs(startingMoney)
         self.__TCV__ = abs(startingMoney)
 
+#############################################################
+##########################PF STATE###########################
     def setState(self, state: state.State) -> None:
         self.__state__ = state
 
-    def presentState(self) -> None:
+    def presentState(self) -> None: #toString
         stateName = self.__state__#string overload operator
         print(f"Portfolio is in {stateName}")
 
-    def getShares(self) -> share.Share:
-        return self.__Shares__
+    def getState (self) -> None:
+        return self.__state__
+##########################PF STATE###########################
+#############################################################
 
-    #TCV getter setter
+#####################################
+##########TCV getter setter##########
     def getTCV(self) -> float:
         return self.__TCV__
     def setTCV(self, value: float) -> None:
         self.__TCV__ = value
     def addTCV(self, value: float) -> None:
         self.__TCV__ += value
+##########TCV getter setter##########
+#####################################
 
-    #BAL getter setter
+####################################
+#########BAL getter setter##########
     def getBAL(self) -> float:
         return self.__BAL__
     def setBAL(self, value: float) -> None:
         self.__BAL__ = value
     def addBAL(self, value: float) -> None:
         self.__BAL__ += value
+#########BAL getter setter##########
+####################################
 
-    # operator overloading
+##############################################################
+####################operator overloading######################
     # add two portfolios TCV
     def __add__(self, other): 
         return self.getTCV()+other.getTCV()
 
     def __str__(self): 
         return "Value of the portfolio = "+self.__TCV__+self.__quoteCurrency__
+####################operator overloading######################
+##############################################################
 
+##############################################################
+##########################About Shares########################
+    #return the number of shares I hold e.g. btc+eth+sol = 3
     def getNumberOfShares(self):
         return self.__numberOfShares__
-        
+    
+    #get shares return a dict of shares
+    def getShares(self) -> dict[share.Share] :
+        return self.__Shares__
+    
     #add share
     def add(self, share: share.Share) -> None:
         key = share.getName()
         self.__Shares__ [key] = share
         share.parent = self #?
         self.__numberOfShares__ += 1
+
     #remove share
     def remove(self, share: share.Share) -> None:
         key = share.getName()
         self.__Shares__.pop(key, None)
         share.parent = None #?
         self.__numberOfShares__ -= 1
-
-    def is_Composite(self) -> bool:
-        return False
 
     def getWeightArrayOfShares (self) -> np.array:
         tmpArray = np.array()
@@ -218,12 +236,32 @@ class Portfolio(AbstractPortfolio):
     def getShare (self, key: string) -> share.Share:
         if self.__Shares__.has_key(key):
             return self.__Shares__[key]
-    # overload operator for []
+##########################About Shares########################
+##############################################################
+
+####################################
+#########Composite Pattern##########
+    def is_Composite(self) -> bool:
+        return False
+
+    #Search by induction if a key exists
+    def isKeyExists (self, key: string) -> bool:
+        children = self.__Shares__
+        if key in children:
+            return True #problem multiple true if by induction
+        return False
+#########Composite Pattern##########
+####################################
+
+####################################
+######overload operator for []######
     def __getitem__(self, key):
         if self.__Shares__.has_key(key):
             return self.__Shares__[key]
     def __setitem__(self, key, value):
         self.__Shares__[key] = value
+######overload operator for []######
+####################################
 
     def getPortfolioCurrency (self) -> string:
         return self.__quoteCurrency__
@@ -243,13 +281,8 @@ class Portfolio(AbstractPortfolio):
             if self.isKeyExists:
                 children[key].updateQuotation(time, value)
 
-    #Search by induction if a key exists
-    def isKeyExists (self, key: string) -> bool:
-        children = self.__Shares__
-        if key in children:
-            return True #problem multiple true if by induction
-        return False
-
+####################################
+#########Observer Pattern###########
     def report(self) -> dict:
         children = self.__Shares__
         tmpDict = {}
@@ -258,6 +291,8 @@ class Portfolio(AbstractPortfolio):
         for key, child in children.items:
             tmpDict[key] = child.report()
         return tmpDict
+#########Observer Pattern###########
+####################################
 
 # if __name__ == "__main__":
 #     tree = Portfolio()

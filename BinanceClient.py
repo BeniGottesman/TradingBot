@@ -2,8 +2,11 @@ from binance.client import Client #, ThreadedWebsocketManager, ThreadedDepthCach
 from designPattern.Singleton import Singleton
 import Keys as keys
 
-apikey = keys.apikey
-apisecret = keys.apisecret
+#see https://algotrading101.com/learn/binance-python-api-guide/
+#see https://testnet.binance.vision/
+
+apikey = keys.API_Key
+apisecret = keys.Secret_Key
 
 class client(metaclass=Singleton):
     def __init__(self):

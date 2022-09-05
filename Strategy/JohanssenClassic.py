@@ -21,7 +21,11 @@ class JohannsenClassic(st.Strategy):
         self.__initialInvestmentPercentage__ = _initialInvestmentPercentage #0.2% of the capital for instance
         self.__state__ = state.StrategyWaitToEntry()
 
-    def doAlgorithm(self, portfolio: pf.Portfolio, c: int, quotations: dict, verbose = False) -> None:
+    def doAlgorithm(self, portfolio: pf.Portfolio, c: float, quotations: dict, verbose = False) -> None:
+            ...
+
+        #c=0.75 -> 0.75xsigma    
+    def doOneDay(self, portfolio: pf.Portfolio, c: float, quotations: dict, verbose = False) -> None:
         log_return = {}
 
         # First we compute the spread
@@ -38,37 +42,44 @@ class JohannsenClassic(st.Strategy):
             print ("There are ", jres.r, "cointegration vectors")
 
         # v =  np.array ([np.ones(jres.r), jres.evecr[:,0], jres.evecr[:,1]], dtype=object)
-        spreadWeights = jres.evecr[:,0]
+        spreadWeights = jres.evecr[:,0] # Weights to hold in order to make the mean reverting strat
         spreadWeights = spreadWeights/spreadWeights[0] #normalisation
 
         # spread  = np.dot(pd_lr_price_series.values, v[1,:])
-        mu      = np.mean (np.dot(log_return.values, spreadWeights))
-        sigma   = np.var (np.dot(log_return.values, spreadWeights))
-        spread = np.dot(log_return.values, spreadWeights)
+        mu      = np.mean (np.dot(log_return.values, spreadWeights)) # Mean
+        sigma   = np.var (np.dot(log_return.values, spreadWeights)) # Variance
+        sigma   = np.sqrt(sigma)
+        spread  = np.dot (log_return.values, spreadWeights) # The Spread or Portfolio to buy see research Spread
 
         # Once I obtain the spread
         # I check the state of the pf
         error = 0.5
-        presentState = self.__state__.getState() #string overload
+        #the state of the strategy
+        presentStrategyState = self.__state__.getState() #string overload
         weightArrayOfShares = portfolio.getWeightArrayOfShares()
-        S = portfolio.getTCV()
-        NbShares = portfolio.getNumberOfShares()
-        howMuchToInvestWeights = spreadWeights*(S/NbShares)*log_return [-1]
+        myMoney = portfolio.getBAL()# Amount of money I actually hold in my pf
+        #NbShares = portfolio.getNumberOfShares()# numbers of shares I hold
+        NbShares = len(spreadWeights) # array containing numbers of shares I hold
+
+        #we renormalize the weights w.r.t. the pf money
+        howMuchToInvestWeights = spreadWeights * (myMoney/NbShares)*log_return [-1]
         pfState = portfolio.getState()
         if pfState == "Ready":
-            if presentState == "WaitToEntry":
+            if presentStrategyState == "WaitToEntry":
+                #if the last value of the mean reverting serie=spread[-1]<... then
                 if spread[-1] < mu-c*sigma: #we start the Long strategy
                     self.__backtest__.entry(howMuchToInvestWeights)
-                if spread[-1] > mu-c*sigma: #we start the Short strategy
-                    self.__backtest__.entry(howMuchToInvestWeights)
+                if spread[-1] > mu+c*sigma: #we start the Short strategy
+                    self.__backtest__.entry(howMuchToInvestWeights) # or -howMuchToInvestWeights ?
                 self.__state__ = state.StrategyWaitToExit()
-            if presentState == "WaitToExit":
+            if presentStrategyState == "WaitToExit":
                 if spread[-1] < mu-c*sigma: #we exit the Short strategy
                     self.__backtest__.exit()
                     self.__state__ = state.StrategyWaitToEntry()
                 if spread[-1] > mu+c*sigma: #we exit the long strategy
                     self.__backtest__.exit()
                     self.__state__ = state.StrategyWaitToEntry()
+                #If we wznt to buy the spread
                 elif howMuchToInvestWeights-weightArrayOfShares > error:
                     if pfState == "Ready":
                         rebalancing = weightArrayOfShares - spreadWeights
@@ -77,6 +88,6 @@ class JohannsenClassic(st.Strategy):
                         print ("No money to rebalance the Portfolio")
 
         if pfState == "StopLoss":
-            if presentState == "WaitToExit":
+            if presentStrategyState == "WaitToExit":
                     self.__backtest__.exit()
                     self.__state__.setState("Nothing")

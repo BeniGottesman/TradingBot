@@ -6,6 +6,7 @@ from sys import maxsize
 import Strategy.Strategy as st
 import Portfolio.Portfolio as pf
 
+#Abstract class
 #It is a mediator between Strat and portfolio
 class mediator():
 
