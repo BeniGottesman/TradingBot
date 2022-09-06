@@ -1,4 +1,5 @@
 from datetime import *
+import os
 
 #For data.binance.vision
 YEARS = ['2017', '2018', '2019', '2020', '2021', '2022']
@@ -13,3 +14,5 @@ END_DATE = datetime.date(datetime.now())
 
 HISTORICAL_BINANCE_COLUMN = ['Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close Time', 'Quote Asset Volume', 
                             'Number of Trades', 'TB Base Volume', 'TB Quote Volume', 'Ignore']
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))+"\\"

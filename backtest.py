@@ -2,7 +2,7 @@ import BinanceClient as bc
 from datetime import date
 import os
 import dataRetrieving as dr
-import enums as en
+import enums as cst
 import numpy as np
 import pandas as pd
 import maths.Statistics as stat

@@ -1,11 +1,11 @@
-import enums as en
+import enums as cst
 import os
 import sys
 import pandas as pd
 fileDirectory = os.getcwd()
 sys.path.append(fileDirectory+"binanceDataRetrieve\\")
 from binanceDataRetrieve import downloadkline as dk
-import enums as en
+import enums as cst
 import numpy as np
 
 #Download the datas from binance.data, inside data folder and
@@ -28,7 +28,7 @@ def CSVtoDataFrame (file)->pd.DataFrame:
     filepkl = file.split(".")[0]+".pkl" #pickle is for reading quickly the csv
     # if not os.path.exists(filepkl):
     hist_df = pd.read_csv(file)
-    hist_df.columns = en.HISTORICAL_BINANCE_COLUMN
+    hist_df.columns = cst.HISTORICAL_BINANCE_COLUMN
     hist_df['Open Time'] = pd.to_datetime(hist_df['Open Time']/1000, unit='s')
     hist_df['Close Time'] = pd.to_datetime(hist_df['Close Time']/1000, unit='s')
     numeric_columns = ['Open', 'High', 'Low', 'Close', 'Volume', 'Quote Asset Volume', 'TB Base Volume', 'TB Quote Volume']
