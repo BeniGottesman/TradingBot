@@ -2,12 +2,12 @@
 
 # https://refactoring.guru/fr/design-patterns/composite/python/example
 
+from __future__ import annotations
 from abc import abstractmethod
 import string
 from typing import List
 import numpy as np
 from datetime import datetime
-from __future__ import annotations
 import designPattern.observer as obs
 import Portfolio.PfState as state
 import Portfolio.Share as share
@@ -181,7 +181,7 @@ class Portfolio(AbstractPortfolio):
 #####################################
 
 ####################################
-#########BAL getter setter##########
+#########BAL getter setter##########WARNING need to be private
     def getBAL(self) -> float:
         return self.__BAL__
     def setBAL(self, value: float) -> None:
@@ -198,12 +198,25 @@ class Portfolio(AbstractPortfolio):
         return self.getTCV()+other.getTCV()
 
     def __str__(self): 
-        return "Value of the portfolio = "+self.__TCV__+self.__quoteCurrency__
+        s = "Portfolio = " + self.__name__
+        s+= '\n'
+        s+= "Value of the portfolio = "+str(self.__TCV__)+" "+self.__quoteCurrency__
+        s+= '\n'
+        s+= "BAL of the portfolio = "+str(self.__BAL__)+" "+self.__quoteCurrency__
+        s+= '\n'
+        i=0
+        for key in self.__Shares__:
+            i+=1
+            s+= str(i)+". Share = "+key+", quantity = "+str(self.__Shares__[key].getShareQuantity())
+            s+= '\n'
+        return s
 ####################operator overloading######################
 ##############################################################
 
 ##############################################################
 ##########################About Shares########################
+#No need to add setNumberOfShare ? We do not set we add()
+
     #return the number of shares I hold e.g. btc+eth+sol = 3
     def getNumberOfShares(self):
         return self.__numberOfShares__
@@ -270,8 +283,8 @@ class Portfolio(AbstractPortfolio):
     #it is preferable to updateValues before
     def value(self) -> float:
         tmpValue = 0
-        for key, child in self.__Shares__.items:
-            tmpValue += child.value()
+        for key in self.__Shares__:
+            tmpValue += self.__Shares__[key].value()
         return tmpValue
     
     #Update the quote value of the pairs
@@ -288,9 +301,15 @@ class Portfolio(AbstractPortfolio):
         tmpDict = {}
         tmpDict["TCV"] = self.__TCV__
         tmpDict["BAL"] = self.__BAL__
-        for key, child in children.items:
-            tmpDict[key] = child.report()
+        for key in children:
+            tmpDict[key] = children[key].report()
         return tmpDict
+    
+    #test it
+    def notify(self, verbose = False) -> None:        
+        # tmpDict = self.report(self)
+        for i in self.__observers__:
+            self.__observers__[i].update(self)
 #########Observer Pattern###########
 ####################################
 

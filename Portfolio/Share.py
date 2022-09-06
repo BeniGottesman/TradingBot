@@ -1,11 +1,12 @@
 # https://refactoring.guru/fr/design-patterns/composite/python/example
 
+from __future__ import annotations
 from abc import abstractmethod
 import string
 from typing import List
 from datetime import datetime
-from __future__ import annotations
-import Portfolio.PfState as state
+#import Portfolio.PfState as st
+import designPattern.state as st
 import Portfolio.AbstractInstrument as ai
 
 
@@ -14,13 +15,16 @@ import Portfolio.AbstractInstrument as ai
 class Share(ai.AbstractInstrument):
     _state = None
     
-    def __init__(self, _name, _type) -> None:
+    def __init__(self, _type, _name) -> None:
         super().__init__(_type, _name)
         # self.__name__ = _name #for instance BTCUSDT
-        self.setState(state)
+        self.__state__ = st.nothingState()#Make ShareState class
         self.__numberOfShares__ = 0
         # self.__BaseCurrentValue__ = 1 because 1 BTC = X Dollar
         self.__quoteCurrentValue__ = 0 #for 1 BTC = QuoteCurrentValue $
+
+    def setState(self, state: st.State) -> None:
+        self.__state__ = state
 
     def getShareQuantity (self):
         return self.__numberOfShares__
@@ -46,16 +50,16 @@ class cryptoCurrency(Share):
 
     #market value
     def getQuoteCurrentValue (self):
-        return self.__QuoteCurrentValue__
+        return self.__quoteCurrentValue__
     def updateMarketQuotation (self,  time: datetime, value, verbose = False) -> None:
-        self.__QuoteCurrentValue__ = value
+        self.__quoteCurrentValue__ = value
 
     def getPair(self)-> str:
         return "Pair = "+self.__name__
 
     #return the value hold in $
     def value(self) -> str:
-        return self.__QuoteCurrentValue__*self.__numberOfShares__
+        return self.__quoteCurrentValue__*self.__numberOfShares__
 
     def isKeyExists (self, key: string) -> bool:
         if key != self.__name__:

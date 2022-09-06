@@ -1,11 +1,11 @@
 from abc import abstractmethod
-import designPattern.state as state
-import Portfolio.Portfolio as pf
+import designPattern.state as st
+# import Portfolio.Portfolio as pf
 
 # The common state interface for all the states
 # Context = Portfolio, Share etc
 #https://auth0.com/blog/state-pattern-in-python/
-class StrategyState(state):
+class StrategyState(st.state):
 
     @abstractmethod
     def myStateIs (self) -> None:

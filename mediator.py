@@ -11,7 +11,7 @@ import Portfolio.Portfolio as pf
 class mediator():
 
     @abstractmethod
-    def execute(self, pf: pf.AbstractPortfolio, data: List):
+    def execute(self, pf: pf.AbstractPortfolio, data: list):
         pass
 
 class severalTrading(mediator):
@@ -29,7 +29,7 @@ class severalTrading(mediator):
         if self.__strategy__.has_key(stratID):
             del self.__strategy__ [stratID]
 
-    def execute(self, pf: pf.AbstractPortfolio, data: List):
+    def execute(self, pf: pf.AbstractPortfolio, data: list):
         i = 0
         for i in len(self.__mediators__):
             self.__mediators__.execute()
@@ -41,10 +41,10 @@ class Trading (mediator):
         self.__strategy__  = strategy
         self.__portfolio__ = portfolio
         self.__name__ = random.randint(1, maxsize) #unique
-        portfolio.setID(self.__name__)
+        #portfolio.setID(self.__name__) #useless since portfolio has been initialized before
 
     def getID(self) -> int:
         return self.__name__
 
-    def execute(self, pf: pf.AbstractPortfolio, data: List):
+    def execute(self, pf: pf.AbstractPortfolio, data: list):
         return

@@ -1,14 +1,15 @@
 # https://refactoring.guru/fr/design-patterns/composite/python/example
 
+from __future__ import annotations
 from abc import abstractmethod
 import string
 from typing import List
 from datetime import datetime
-from __future__ import annotations
+import Portfolio.PfState as st
 
 class AbstractInstrument:
 
-    def __init__(self, _type="currency", _name="generic portfolio") -> None:
+    def __init__(self, _type="currency", _name="generic") -> None:
         self.__type__ = _type
         self.__name__ = _name
 
@@ -31,7 +32,11 @@ class AbstractInstrument:
 
     def is_Composite(self) -> bool:
         return False
-
+    
+    @abstractmethod
+    def setState(self, state: st.State) -> None:
+        pass
+    
     @abstractmethod
     def getTCV(self) -> float:
         pass

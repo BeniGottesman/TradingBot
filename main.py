@@ -8,12 +8,15 @@ import pandas as pd
 import maths.Statistics as stat
 import backtest as bt
 import matplotlib.pyplot as plt
-import Test.ScrapAndJohanssonTest as test
+
+import Test.ScrapAndJohanssonTest as ScrapAndJohansson
+import Test.portfolioTest as pfTest
+import Test.MediatorTest as medTest
 
 clienSingletonInstance = bc.client()
 client = clienSingletonInstance.getClient()
 
 def main ():
-    test.scrapandjohanssonTest()
+    medTest.testStrategy()
 
 main()

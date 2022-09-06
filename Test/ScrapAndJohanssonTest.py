@@ -12,7 +12,7 @@ def scrapandjohanssonTest():
     referencePair = 'BTCUSDT'
     checkCryptoVolume = {}
     # checkCryptoVolume['BTC']  = 100 #we want every pairs with base BTC such that the 24h-volume >500 
-    checkCryptoVolume['USDT'] = 50000000
+    checkCryptoVolume['USDT'] = 75000000
     # checkCryptoVolume['BNB']  = 1000
 
     #f = os.path.dirname(os.path.realpath(__file__))+"\\"
@@ -64,12 +64,12 @@ def scrapandjohanssonTest():
     mu      = np.mean (np.dot(pd_lr_price_series.values, v[1,:]/jres.evecr[0])) # Mean
     sigma   = np.var (np.dot(pd_lr_price_series.values, v[1,:]/jres.evecr[0])) # Variance
     sigma   = np.sqrt(sigma)
-    c=1.0
+    c=.50
     l1 = (mu+c*sigma)*np.ones (len(timeline))
     l2 = (mu-c*sigma)*np.ones (len(timeline))
     spread = np.dot(pd_lr_price_series.values, v[1,:]/jres.evecr[0])
     
-    # print (spread_average)
+    print ("Plot")
     plt.plot(timeline, spread, timeline, spread_average, timeline, l1, timeline, l2)
     plt.gcf().autofmt_xdate()
     plt.plot()
