@@ -5,7 +5,7 @@ import dataRetrieving as dr
 import enums as cst
 import numpy as np
 import pandas as pd
-import maths.Statistics as stat
+import maths.Statistics as statistics
 
 clienSingletonInstance = bc.client()
 client = clienSingletonInstance.getClient()

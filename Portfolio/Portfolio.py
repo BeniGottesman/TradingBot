@@ -164,8 +164,8 @@ class Portfolio(AbstractPortfolio):
         stateName = self.__state__#string overload operator
         print(f"Portfolio is in {stateName}")
 
-    def getState (self) -> None:
-        return self.__state__
+    def getState (self) -> str:
+        return self.__state__.getState()
 ##########################PF STATE###########################
 #############################################################
 

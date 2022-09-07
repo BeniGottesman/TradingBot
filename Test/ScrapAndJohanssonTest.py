@@ -4,7 +4,7 @@ import dataRetrieving as dr
 import enums as cst
 import numpy as np
 import pandas as pd
-import maths.Statistics as stat
+import maths.Statistics as statistics
 import backtest as bt
 import matplotlib.pyplot as plt
 
@@ -37,13 +37,13 @@ def scrapandjohanssonTest():
     #We start the strat by a log transform of the time-series
     for key in pairs:
         s = data [key]['Close']
-        log_return[key] = np.array (stat.log_Transform(s))
+        log_return[key] = np.array (statistics.log_Transform(s))
     
     #log return price series TO dataframe
     pd_lr_price_series = pd.DataFrame(index=data[referencePair]['Close Time'], data={key: log_return[key] for key in log_return})
     pd_lr_price_series = pd_lr_price_series[-thirtyDays:]#we take only the last 30 days
     p = 1 #p=1 -> 95%
-    jres = stat.get_johansen(pd_lr_price_series, p)
+    jres = statistics.get_johansen(pd_lr_price_series, p)
 
     print ("There are ", jres.r, "cointegration vectors")
 

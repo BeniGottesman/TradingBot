@@ -3,10 +3,11 @@ import sys
 import Strategy.Strategy as st
 import Strategy.Strategystate as state
 from typing import List
-import maths.Statistics as stat
+import maths.Statistics as statistics
 import Portfolio.Portfolio as pf
 import numpy as np
 import pandas as pd
+import Portfolio.PfState as pfstate
 
 class JohannsenClassic(st.Strategy):
     def __init__(self, portfolio: pf.Portfolio,
@@ -26,21 +27,25 @@ class JohannsenClassic(st.Strategy):
         
     # c=0.75 -> mu +/- 0.75xsigma 
     # quotation = value of the different money now
-    def doOneDay(self, timeNow: datetime, portfolio: pf.Portfolio, c: float, quotations: dict, verbose = False) -> None:
-        log_return = {}
+    def doOneDay(self, timeNow: datetime, portfolio: pf.Portfolio, c: float, quotations: np.array, verbose = False) -> None:
+        timeSerieSize   = quotations.shape[0]
+        nbShares        = quotations.shape[1]
+        log_return = np.zeros(shape=(timeSerieSize, nbShares))
 
         # First we compute the spread
-        myShares = portfolio.getShares()
-        for key, value in myShares.items:
-            log_return[key] = np.array (stat.log_Transform(quotations[key]))
+        for i in range (nbShares):
+            # log_return[key] = np.array (stat.log_Transform(quotations[key]["Close"][beginningWindow:endWindow]))
+            col = np.array (statistics.log_Transform(quotations[:,i]))
+            log_return [:,i] = col
         
         # pd_lr_price_series = pd.DataFrame(index=quotations['Close Time'], data={key: log_return[key] for key in log_return})
         # pd_lr_price_series = pd_lr_price_series[-self.__rollingwindow__:]#we take only the last 30 days
         p = 1
-        jres = stat.get_johansen(log_return, p)
+        #log_return=pd.DataFrame(data={key: log_return[key] for key in log_return})
+        jres = statistics.get_johansen(log_return, p)
 
-        if verbose :
-            print ("There are ", jres.r, "cointegration vectors")
+        # if verbose :
+        #     print ("There are", jres.r, "cointegration vectors")
 
         # v =  np.array ([np.ones(jres.r), jres.evecr[:,0], jres.evecr[:,1]], dtype=object)
         spreadWeights = jres.evecr[:,0] # Weights to hold in order to make the mean reverting strat
@@ -51,22 +56,21 @@ class JohannsenClassic(st.Strategy):
         error = 0.5
         #the state of the strategy
         presentStrategyState = self.__state__.getState() #string overload
-        myMoney = portfolio.getTCV ()# Amount of money I actually hold in my pf
-        #NbShares = portfolio.getNumberOfShares()# numbers of shares I hold
-        NbShares = len(spreadWeights) # array containing numbers of shares I hold
+        myMoney = portfolio.getTCV ()# Amount of money I  actually hold in my pf
 
         #we renormalize the weights w.r.t. the pf money
-        spread = spreadWeights * quotations #= value
-        alpha = spread/myMoney
+        spread = spreadWeights * quotations[timeSerieSize-1,:] #= value
+        alpha  = spread/myMoney
         howMuchToInvestWeights = spreadWeights/alpha
         
-        mu      = np.mean (np.dot(log_return.values, howMuchToInvestWeights)) # Mean
-        sigma   = np.var (np.dot(log_return.values, howMuchToInvestWeights)) # Variance
+        mu      = np.mean (np.dot(log_return, howMuchToInvestWeights)) # Mean
+        sigma   = np.var (np.dot(log_return, howMuchToInvestWeights)) # Variance
         sigma   = np.sqrt(sigma)
-        spread  = np.dot (log_return.values, howMuchToInvestWeights) # The Spread or Portfolio to buy see research Spread
+        spread  = np.dot (log_return, howMuchToInvestWeights) # The Spread or Portfolio to buy see research Spread
 
         pfState = portfolio.getState()
-        if pfState == "Ready":
+        if pfState == "READY": #or
+        # if pfState == pfstate.PortfolioIsReady():
             if presentStrategyState == "WaitToEntry":
                 #if the last value of the mean reverting serie=spread[-1]<... then
                 if spread[-1] < mu-c*sigma: #we start the Long strategy
@@ -92,21 +96,43 @@ class JohannsenClassic(st.Strategy):
                 #     if pfState == "No Money in BAL" and verbose:
                 #         print ("No money to rebalance the Portfolio")
 
-        if pfState == "StopLoss":
+        elif pfState == "StopLoss":
             if presentStrategyState == "WaitToExit":
                     self.__backtest__.exit()
                     self.__state__.setState("Nothing")
 
     #Vectorization
-    def doAlgorithm(self, portfolio: pf.Portfolio, c: float, quotations: pd.DataFrame, verbose = False) -> None:
+    #quotations: pd.DataFrame ?
+    def doAlgorithm(self, portfolio: pf.Portfolio, c: float, quotations: dict, verbose = False) -> None:
             # timeIndex = quotations[0].index
-            size = len(quotations.index)
-            for i in size:
-                #j = i * self.__timeCycleInSecond__ # We convert it to timestamp
-                beginning = i*self.__rollingwindow__
-                end = (i+1)*self.__rollingwindow__ + 1
-                q = quotations.iloc [ beginning : end ]
-                timeNow = q.index [-1]
-                self.doOneDay (self, timeNow, portfolio, c, q, verbose)
-            portfolio.plot()
+            tmpMoney = list(quotations.keys())[0]
+            size = len(quotations[tmpMoney]["Close"])
+            # print("size=",size)
+            
+            n = portfolio.getNumberOfShares()
+            q = np.zeros(shape=(self.__rollingwindow__, n))
+            i=0
+            while True:
+                beginning = i
+                end = self.__rollingwindow__ + i
+                if end >= size:
+                    break
+                myShares = portfolio.getShares()
+                j=0
+                for key in myShares:
+                    #We take the transpose
+                    col = np.array (quotations [key]["Close"] [ beginning : end ]).T
+                    q [:,j] = col
+                    # q = np.concatenate ([q, col], axis=1)
+                    j+=1
+                timeNow = list (quotations[tmpMoney]["Close Time"][ beginning : end ])[-1]
+                self.doOneDay (timeNow, portfolio, c, q, verbose)
+                
+                verbose = True
+                if verbose and i%1000==0:
+                    print("i =",i)
+                    print(portfolio)
+                    
+                i+=1
+            #portfolio.plot()
             

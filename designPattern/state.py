@@ -16,6 +16,10 @@ class state():
     @abstractmethod
     def __str__(self): 
         pass
+    
+    @abstractmethod
+    def __eq__(self, other):
+        pass
 
 class nothingState(state):
 

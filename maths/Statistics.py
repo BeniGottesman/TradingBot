@@ -15,6 +15,7 @@ def get_johansen(y, p):
         """
 
         N, col = y.shape
+        coltmp = len(y)
         jres = coint_johansen(y, 0, p)
         trstat = jres.lr1                       # trace statistic
         tsignf = jres.cvt                       # critical values
@@ -75,7 +76,7 @@ def ADFUnitRootTest ():
             #print(dfoutput[sym])
             print(i, ". Symbol = ", sym, ", p-value = ", float (dfoutput[sym]["p-value"]))
 
-def nan_helper(y):
+def nan_helper(y: pd.DataFrame):
 #    """Helper to handle indices and logical indices of NaNs.
 
 #    Input:
@@ -92,7 +93,10 @@ def nan_helper(y):
 
     return np.isnan(y), lambda z: z.to_numpy().nonzero()[0]
 
-def log_Transform (data):
+def nan_helper(y: np.array):
+    return np.isnan(y), lambda z: z.nonzero()[0]
+
+def log_Transform (data: pd.DataFrame):
 #    """Helper to handle indices and logical indices of NaNs.
 
 #    Input:
@@ -106,3 +110,21 @@ def log_Transform (data):
     nans, x = nan_helper(log_return)
     log_return[nans] = np.interp(x(nans), x(~nans), log_return[~nans])
     return log_return
+
+def log_Transform (data: np.array):
+    log_return = np.log(data) - np.log(shift (data,1))
+    nans, x = nan_helper(log_return)
+    log_return[nans] = np.interp(x(nans), x(~nans), log_return[~nans])
+    return log_return
+
+def shift(arr, num, fill_value=np.nan):
+    result = np.empty_like(arr)
+    if num > 0:
+        result[:num] = fill_value
+        result[num:] = arr[:-num]
+    elif num < 0:
+        result[num:] = fill_value
+        result[:num] = arr[-num:]
+    else:
+        result[:] = arr
+    return result

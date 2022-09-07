@@ -33,4 +33,4 @@ class StrategyWaitToExit (StrategyState):
         print ("Strategy : Wait for an exit Signal")
     
     def getState (self) -> None:
-        return "waitToExit"
+        return "WaitToExit"

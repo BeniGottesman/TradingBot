@@ -46,4 +46,6 @@ def testStrategy () -> None :
     name="Test Strategy"
     
     JohannsenStrat = jo.JohannsenClassic(myPF, daysrollingwindow, timeCycleInSecond, initialInvestmentPercentage, transactionCost, name)
-    mediator = med.Trading (JohannsenStrat, myPF)
+    #mediator = med.Trading (JohannsenStrat, myPF)
+    
+    JohannsenStrat.doAlgorithm(myPF, 0.5, data, False)
