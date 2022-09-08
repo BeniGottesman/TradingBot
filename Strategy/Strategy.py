@@ -23,7 +23,7 @@ class StrategyCommandPortfolio(ABC):
 
     @property#=getPf=getter
     def pf(self) -> pf.Portfolio:
-        return self._pf
+        return self._portfolio
 
     @pf.setter#=setPf
     def pf(self, portfolio: pf.Portfolio) -> None:
@@ -51,11 +51,11 @@ class BacktestCommand(StrategyCommandPortfolio):
         tmpBAL = self._portfolio.getBAL()
         if tmpBAL <= 0:
             if self.pf.getState() != "STOPPED":
-                self.pf.setState(pfstate.PortfolioIsStopped)
-            print("No money in BAL = "+tmpBAL)
+                self.pf.setState(pfstate.PortfolioIsStopped(time, 0))# PROBLEM
+            print("No money in BAL = "+str(tmpBAL))
             return
         
-        for key, quantity in listInvestments.items: #self.pf._children
+        for key, quantity in listInvestments.items(): #self.pf._children
             if not self.pf.isKeyExists(key):
                 newShare = pf.Share(key, quantity)#(key, quantity, time)
                 self.pf.add(newShare)
@@ -73,13 +73,14 @@ class BacktestCommand(StrategyCommandPortfolio):
             print("We exit the strat.")
 
         tmpBAL = self.pf.value()
-        for key, share in self.pf.getShares().items:
-            share.setQuantity(0)
+        shares=self.pf.getShares()
+        for key in shares.keys():
+            shares[key].setShareQuantity(0)
         self.pf.setTCV (tmpBAL)
         self.pf.setBAL (tmpBAL)
 
         #ATTENTION CHECK IF IT IS GOOD
-        self.pf.setState(pfstate.PortfolioIsReady())
+        self.pf.setState(pfstate.PortfolioIsReady(time, tmpBAL))
         self.pf.notify()#my state is now to position closed
 
 

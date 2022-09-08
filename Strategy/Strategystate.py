@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from datetime import datetime
 import designPattern.state as st
 # import Portfolio.Portfolio as pf
 
@@ -6,7 +7,10 @@ import designPattern.state as st
 # Context = Portfolio, Share etc
 #https://auth0.com/blog/state-pattern-in-python/
 class StrategyState(st.state):
-
+             #__savePfState__=Contain the value of the pf when we enter the strat -> useful for computing a stop loss
+    def __init__(self, _time: datetime, _value: float):
+        super().__init__(_time, _value)
+        
     @abstractmethod
     def myStateIs (self) -> None:
         pass

@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import datetime
 import designPattern.state as st
 import Portfolio.Portfolio as pf
 
@@ -6,7 +7,8 @@ import Portfolio.Portfolio as pf
 # Context = Portfolio, Share etc
 #https://auth0.com/blog/state-pattern-in-python/
 class PortfolioState(st.state):
-    def __init__(self, _state) -> None:
+    def __init__(self, _state, _time: datetime, _value: float) -> None:
+        super().__init__(_time, _value)
         self.__state__ = _state
         
     @abstractmethod
@@ -18,7 +20,7 @@ class PortfolioState(st.state):
         pass
     
     @abstractmethod
-    def getState (self) -> None:
+    def getState (self) -> str:
         pass
     
     def __eq__(self, other):
@@ -28,8 +30,8 @@ class PortfolioState(st.state):
         return False
     
 class PortfolioIsReady (PortfolioState):
-    def __init__(self) -> None:
-        super().__init__("READY")
+    def __init__(self, _time: datetime, _value: float) -> None:
+        super().__init__("READY", _time, _value)
     
     def __str__(self): 
         return "READY"
@@ -37,14 +39,14 @@ class PortfolioIsReady (PortfolioState):
     def myStateIs (self) -> None:
         print ("Ready")
     
-    def getState (self) -> None:
+    def getState (self) -> str:
         return "READY"
     
 
 
 class NoMoneyInBAL (PortfolioState):
-    def __init__(self) -> None:
-        super().__init__("No Money in BAL")
+    def __init__(self, _time: datetime, _value: float) -> None:
+        super().__init__("No Money in BAL", _time, _value)
         
     def __str__(self): 
         return "No Money in BAL"
@@ -52,12 +54,12 @@ class NoMoneyInBAL (PortfolioState):
     def myStateIs (self) -> None:
         print ("No Money in BAL")
     
-    def getState (self) -> None:
+    def getState (self) -> str:
         return "No Money in BAL"
 
 class PortfolioIsStopped (PortfolioState):
-    def __init__(self) -> None:
-        super().__init__("STOPPED")
+    def __init__(self, _time: datetime, _value: float) -> None:
+        super().__init__("STOPPED", _time, _value)
         
     def __str__(self): 
         return "STOPPED"
@@ -65,5 +67,5 @@ class PortfolioIsStopped (PortfolioState):
     def myStateIs (self) -> None:
         print ("Stopped")
     
-    def getState (self) -> None:
+    def getState (self) -> str:
         return "STOPPED"

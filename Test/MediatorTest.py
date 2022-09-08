@@ -15,7 +15,7 @@ def testStrategy () -> None :
     
     referencePair = 'BTCUSDT'
     checkCryptoVolume = {}
-    checkCryptoVolume[quoteCurrency] = 100000000
+    checkCryptoVolume[quoteCurrency] = 250000000
 
     #f = os.path.dirname(os.path.realpath(__file__))+"\\"
     paramScrap = {"folder": cst.ROOT_DIR,
@@ -48,4 +48,5 @@ def testStrategy () -> None :
     JohannsenStrat = jo.JohannsenClassic(myPF, daysrollingwindow, timeCycleInSecond, initialInvestmentPercentage, transactionCost, name)
     #mediator = med.Trading (JohannsenStrat, myPF)
     
-    JohannsenStrat.doAlgorithm(myPF, 0.5, data, False)
+    c = 1.
+    JohannsenStrat.doAlgorithm(myPF, c, data, False)

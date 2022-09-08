@@ -147,10 +147,11 @@ class Portfolio(AbstractPortfolio):
     #quoteCurrency="USD(T)" usually
     def __init__(self, quoteCurrency: string, portfolioName: string, startingMoney: float) -> None:
         super().__init__("Portfolio", portfolioName)
+        self.__timeNow__ = 0
         self.__Shares__: dict[share.Share] = {}
         self.__numberOfShares__ = 0
         # self.__portfolioName__ = portfolioName
-        self.__state__ = state.PortfolioIsReady()
+        self.__state__ = state.PortfolioIsReady(self.__timeNow__, 0)
         self.__quoteCurrency__ = quoteCurrency
         self.__BAL__ = abs(startingMoney)
         self.__TCV__ = abs(startingMoney)
@@ -171,7 +172,12 @@ class Portfolio(AbstractPortfolio):
 
 #####################################
 ##########TCV getter setter##########
-    def getTCV(self) -> float:
+    def getTCV(self) -> float: #REmettre a jours avec les donnees actuelles de marche
+        myShares = self.__Shares__
+        tmp = 0
+        for key in myShares:
+            tmp += myShares[key].value()
+        self.__TCV__ = tmp
         return self.__TCV__
     def setTCV(self, value: float) -> None:
         self.__TCV__ = value
@@ -197,8 +203,8 @@ class Portfolio(AbstractPortfolio):
     def __add__(self, other): 
         return self.getTCV()+other.getTCV()
 
-    def __str__(self): 
-        s = "Portfolio = " + self.__name__
+    def __str__(self):
+        s= "Portfolio = " + self.__name__ + "Time = " + str (self.__timeNow__)
         s+= '\n'
         s+= "Value of the portfolio = "+str(self.__TCV__)+" "+self.__quoteCurrency__
         s+= '\n'
@@ -247,7 +253,7 @@ class Portfolio(AbstractPortfolio):
         return tmpArray
 
     def getShare (self, key: string) -> share.Share:
-        if self.__Shares__.has_key(key):
+        if key in self.__Shares__:
             return self.__Shares__[key]
 ##########################About Shares########################
 ##############################################################
@@ -288,11 +294,12 @@ class Portfolio(AbstractPortfolio):
         return tmpValue
     
     #Update the quote value of the pairs
-    def updateMarketQuotation(self, time: datetime, listQuotations, verbose = False) -> None:
+    def updateMarketQuotation(self, time: datetime, listQuotations: dict, verbose = False) -> None:
+        self.__timeNow__ = time
         children = self.__Shares__
-        for key, value in listQuotations.items: #self.pf._children
-            if self.isKeyExists:
-                children[key].updateQuotation(time, value)
+        for key in listQuotations: #self.pf._children
+            if key in children:
+                children[key].updateMarketQuotation(time, listQuotations[key])
 
 ####################################
 #########Observer Pattern###########

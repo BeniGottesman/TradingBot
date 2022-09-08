@@ -22,12 +22,12 @@ class JohannsenClassic(st.Strategy):
             sys.exit()
         #This variable is 1 i.e. not used yet
         self.__initialInvestmentPercentage__ = _initialInvestmentPercentage #0.2% of the capital for instance
-        self.__state__ = state.StrategyWaitToEntry()
+        self.__state__ = state.StrategyWaitToEntry(0,0)
         
         
     # c=0.75 -> mu +/- 0.75xsigma 
     # quotation = value of the different money now
-    def doOneDay(self, timeNow: datetime, portfolio: pf.Portfolio, c: float, quotations: np.array, verbose = False) -> None:
+    def doOneDay(self, timeNow: datetime, portfolio: pf.Portfolio, c: float, Moneys: list, quotations: np.array, verbose = False) -> None:
         timeSerieSize   = quotations.shape[0]
         nbShares        = quotations.shape[1]
         log_return = np.zeros(shape=(timeSerieSize, nbShares))
@@ -56,35 +56,57 @@ class JohannsenClassic(st.Strategy):
         error = 0.5
         #the state of the strategy
         presentStrategyState = self.__state__.getState() #string overload
-        myMoney = portfolio.getTCV ()# Amount of money I  actually hold in my pf
-
-        #we renormalize the weights w.r.t. the pf money
-        spread = spreadWeights * quotations[timeSerieSize-1,:] #= value
-        alpha  = spread/myMoney
-        howMuchToInvestWeights = spreadWeights/alpha
-        
-        mu      = np.mean (np.dot(log_return, howMuchToInvestWeights)) # Mean
-        sigma   = np.var (np.dot(log_return, howMuchToInvestWeights)) # Variance
-        sigma   = np.sqrt(sigma)
-        spread  = np.dot (log_return, howMuchToInvestWeights) # The Spread or Portfolio to buy see research Spread
+        myMoney = portfolio.getBAL ()# Amount of money I  actually hold in my pf
 
         pfState = portfolio.getState()
-        if pfState == "READY": #or
-        # if pfState == pfstate.PortfolioIsReady():
+        if pfState == "READY": #or # if pfState == pfstate.PortfolioIsReady():
+            spread = spreadWeights * quotations[timeSerieSize-1,:] #= value
+            alpha=1
+            if myMoney>0:
+                alpha  = spread/myMoney
+            howMuchToInvestWeights = spreadWeights/alpha
+            #Next line To delete ?
+            howMuchToInvestWeights = howMuchToInvestWeights/nbShares
+            
+            mu      = np.mean (np.dot(log_return, howMuchToInvestWeights)) # Mean
+            sigma   = np.var (np.dot(log_return, howMuchToInvestWeights)) # Variance
+            sigma   = np.sqrt(sigma)
+            spread  = np.dot (log_return, howMuchToInvestWeights) # The Spread or Portfolio to buy see research Spread
+            
+            dictOfInvestment={}
+            dictOfQuotation={}
+            i=0
+            for key, value in zip(Moneys, howMuchToInvestWeights):
+                dictOfInvestment[key] = value
+                dictOfQuotation[key] = quotations[-1,i]
+                i+=1
+            portfolio.updateMarketQuotation(timeNow, dictOfQuotation)
+            
             if presentStrategyState == "WaitToEntry":
                 #if the last value of the mean reverting serie=spread[-1]<... then
+                
                 if spread[-1] < mu-c*sigma: #we start the Long strategy
-                    self.__backtest__.entry(timeNow, howMuchToInvestWeights)
+                    self.__backtest__.entry(timeNow, dictOfInvestment)
+                    pfValue = portfolio.getTCV()
+                    self.__state__ = state.StrategyWaitToExit(timeNow, pfValue)
                 if spread[-1] > mu+c*sigma: #we start the Short strategy
-                    self.__backtest__.entry(timeNow, howMuchToInvestWeights) # or -howMuchToInvestWeights ?
-                self.__state__ = state.StrategyWaitToExit()
-            if presentStrategyState == "WaitToExit":
+                    self.__backtest__.entry(timeNow, dictOfInvestment) # or -howMuchToInvestWeights ?
+                    pfValue = portfolio.getTCV()
+                    self.__state__ = state.StrategyWaitToExit(timeNow, pfValue)
+            elif presentStrategyState == "WaitToExit":
+                oldPfValue = self.__state__.getValue()
+                pfValue = portfolio.getTCV()
                 if spread[-1] < mu-c*sigma: #we exit the Short strategy
-                    self.__backtest__.exit()
-                    self.__state__ = state.StrategyWaitToEntry()
+                    self.__backtest__.exit(timeNow)
+                    self.__state__ = state.StrategyWaitToEntry(timeNow, pfValue)
                 if spread[-1] > mu+c*sigma: #we exit the long strategy
-                    self.__backtest__.exit()
-                    self.__state__ = state.StrategyWaitToEntry()
+                    self.__backtest__.exit(timeNow)
+                    self.__state__ = state.StrategyWaitToEntry(timeNow, pfValue)
+                    
+                if pfValue*100/oldPfValue < 95:
+                    self.__backtest__.exit(timeNow)
+                    self.__state__ = state.StrategyWaitToEntry(timeNow, pfValue)
+                    # self.__state__.setState("Nothing")
             #####Hedging : If we want to buy the spread#####
             #####Add this update in a new version#####
             ##### elif howMuchToInvestWeights-weightArrayOfShares > error: -> Not true, substraction of 2 arrays
@@ -96,21 +118,24 @@ class JohannsenClassic(st.Strategy):
                 #     if pfState == "No Money in BAL" and verbose:
                 #         print ("No money to rebalance the Portfolio")
 
-        elif pfState == "StopLoss":
-            if presentStrategyState == "WaitToExit":
-                    self.__backtest__.exit()
-                    self.__state__.setState("Nothing")
+        # elif pfState == "StopLoss":
+        #     if presentStrategyState == "WaitToExit":
+        #             self.__backtest__.exit()
+        #             self.__state__.setState("Nothing")
 
     #Vectorization
     #quotations: pd.DataFrame ?
     def doAlgorithm(self, portfolio: pf.Portfolio, c: float, quotations: dict, verbose = False) -> None:
             # timeIndex = quotations[0].index
-            tmpMoney = list(quotations.keys())[0]
-            size = len(quotations[tmpMoney]["Close"])
+            Moneys = list(quotations.keys())
+            if len (Moneys) <= 0 :
+                print("No money in your strategy.")
+                return
+            size = len(quotations[Moneys[0]]["Close"])
             # print("size=",size)
             
             n = portfolio.getNumberOfShares()
-            q = np.zeros(shape=(self.__rollingwindow__, n))
+            nparray_quotations = np.zeros(shape=(self.__rollingwindow__, n))
             i=0
             while True:
                 beginning = i
@@ -122,11 +147,11 @@ class JohannsenClassic(st.Strategy):
                 for key in myShares:
                     #We take the transpose
                     col = np.array (quotations [key]["Close"] [ beginning : end ]).T
-                    q [:,j] = col
+                    nparray_quotations [:,j] = col
                     # q = np.concatenate ([q, col], axis=1)
                     j+=1
-                timeNow = list (quotations[tmpMoney]["Close Time"][ beginning : end ])[-1]
-                self.doOneDay (timeNow, portfolio, c, q, verbose)
+                timeNow = list (quotations[Moneys[0]]["Close Time"][ beginning : end ])[-1]
+                self.doOneDay (timeNow, portfolio, c, Moneys, nparray_quotations, verbose)
                 
                 verbose = True
                 if verbose and i%1000==0:

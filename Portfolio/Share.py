@@ -18,7 +18,8 @@ class Share(ai.AbstractInstrument):
     def __init__(self, _type, _name) -> None:
         super().__init__(_type, _name)
         # self.__name__ = _name #for instance BTCUSDT
-        self.__state__ = st.nothingState()#Make ShareState class
+        self.__timeNow__ = 0
+        self.__state__ = st.nothingState(self.__timeNow__,0)#Make ShareState class
         self.__numberOfShares__ = 0
         # self.__BaseCurrentValue__ = 1 because 1 BTC = X Dollar
         self.__quoteCurrentValue__ = 0 #for 1 BTC = QuoteCurrentValue $
@@ -51,7 +52,7 @@ class cryptoCurrency(Share):
     #market value
     def getQuoteCurrentValue (self):
         return self.__quoteCurrentValue__
-    def updateMarketQuotation (self,  time: datetime, value, verbose = False) -> None:
+    def updateMarketQuotation (self,  time: datetime, value: float, verbose = False) -> None:
         self.__quoteCurrentValue__ = value
 
     def getPair(self)-> str:
