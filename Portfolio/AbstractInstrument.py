@@ -1,5 +1,3 @@
-# https://refactoring.guru/fr/design-patterns/composite/python/example
-
 from __future__ import annotations
 from abc import abstractmethod
 import string
@@ -24,51 +22,56 @@ class AbstractInstrument:
     """
     Return the Type : Portfolio, share, asset, currency etc
     """
-    def getType (self) -> string:
+    def get_type (self) -> string:
         return self.__type__
 
-    def getName (self) -> string:
+    def get_name (self) -> string:
         return self.__name__
 
-    def is_Composite(self) -> bool:
+    def is_composite(self) -> bool:
         return False
-    
+
     @abstractmethod
-    def setState(self, state: st.State) -> None:
+    def set_state(self, state: st.State) -> None:
         pass
-    
+
     @abstractmethod
-    def getTCV(self) -> float:
-        pass
-    @abstractmethod
-    def setTCV(self, value: float) -> None:
+    def get_TCV(self) -> float:
         pass
     @abstractmethod
-    def addTCV(self, value: float) -> None:
+    def set_TCV(self, value: float) -> None:
+        pass
+    @abstractmethod
+    def add_TCV(self, value: float) -> None:
         pass
 
     #BAL getter setter
     @abstractmethod
-    def getBAL(self) -> float:
+    def get_BAL(self) -> float:
         pass
     @abstractmethod
-    def setBAL(self, value: float) -> None:
+    def set_BAL(self, value: float) -> None:
         pass
     @abstractmethod
-    def addBAL(self, value: float) -> None:
+    def add_BAL(self, value: float) -> None:
         pass
 
 
     @abstractmethod
     def value(self) -> str:
         pass
+
+    # @abstractmethod
+    # def updateMarketQuotation (self,  time: datetime, list_quotations, verbose = False) -> None:
+    #     pass
+
     @abstractmethod
-    def updateMarketQuotation (self,  time: datetime, listQuotations, verbose = False) -> None:
-        pass
-    @abstractmethod
-    def isKeyExists (self, key: string) -> bool:
+    def is_key_exists (self, key: string) -> bool:
         pass
 
     @abstractmethod
     def report(self) -> dict:
         pass
+
+# References
+# https://refactoring.guru/fr/design-patterns/composite/python/example

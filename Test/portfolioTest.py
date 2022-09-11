@@ -11,14 +11,14 @@ def testPortfolio () -> None :
     s2 = sh.cryptoCurrency("ETHUSD")
     myPF.add(s1)
     myPF.add(s2)
-    print(myPF.getNumberOfShares())
+    print(myPF.get_number_of_shares())
     myPF.remove(s1)
     print(myPF)
-    print(myPF.getNumberOfShares())
+    print(myPF.get_number_of_shares())
     print("value = ", myPF.value())
     
     dict = myPF.report()
-    x = str(dict[s2.getName()]).strip("{}")
+    x = str(dict[s2.get_name()]).strip("{}")
     print(x)
     
     myPF.presentState()

@@ -10,7 +10,8 @@ apisecret = keys.Secret_Key
 
 class client(metaclass=Singleton):
     def __init__(self):
-        self.cl = Client(apikey, apisecret)
+        self.__client__ = Client(apikey, apisecret)
 
-    def getClient (self):
-        return self.cl
+    def get_client (self):
+        return self.__client__
+    

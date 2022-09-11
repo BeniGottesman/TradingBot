@@ -7,9 +7,8 @@ import datetime
 
 
 class Strategy():
-    
     @abstractmethod
-    def doAlgorithm(self, pf: pf.AbstractPortfolio, data: List, verbose = False):
+    def do_algorithm(self, portfolio: pf.AbstractPortfolio, data: List, verbose = False):
         pass
 
 
@@ -30,7 +29,7 @@ class StrategyCommandPortfolio(ABC):
         self._pf = portfolio
 
     @abstractmethod
-    def entry(self, time: datetime, listInvestments: dict, verbose = False) -> None:
+    def entry(self, time: datetime, list_investments: dict, verbose = False) -> None:
         pass
 
     @abstractmethod
@@ -39,48 +38,48 @@ class StrategyCommandPortfolio(ABC):
 
 
 class BacktestCommand(StrategyCommandPortfolio):
+    #Useless
+    # def __init__(self, portfolio: pf.AbstractPortfolio) -> None:
+    #     super().__init__(portfolio)
 
-    def __init__(self, portfolio: pf.AbstractPortfolio) -> None:
-        super().__init__(portfolio)
 
-
-    def entry(self, time: datetime, listInvestments: dict, verbose = False) -> None:
+    def entry(self, time: datetime, list_investments: dict, verbose = False) -> None:
         if verbose:
             print("We entry the strat.")
 
-        tmpBAL = self._portfolio.getBAL()
-        if tmpBAL <= 0:
+        tmp_balance = self._portfolio.get_BAL()
+        if tmp_balance <= 0:
             if self.pf.getState() != "STOPPED":
-                self.pf.setState(pfstate.PortfolioIsStopped(time, 0))# PROBLEM
-            print("No money in BAL = "+str(tmpBAL))
+                self.pf.set_state(pfstate.PortfolioIsStopped())# PROBLEM
+            print("No money in BAL = "+str(tmp_balance))
             return
-        
-        for key, quantity in listInvestments.items(): #self.pf._children
-            if not self.pf.isKeyExists(key):
-                newShare = pf.Share(key, quantity)#(key, quantity, time)
-                self.pf.add(newShare)
+
+        for key, quantity in list_investments.items(): #self.pf._children
+            if not self.pf.is_key_exists(key):
+                new_share = pf.Share(key, quantity)#(key, quantity, time)
+                self.pf.add(new_share)
             else:
                 # child.addShareQuantity(time, quantity) and add to a dict
-                share = self.pf.getShare(key)
-                share.addShareQuantity(quantity)
-            tmpBAL -= self.pf.getShare(key).value()
+                share = self.pf.get_share(key)
+                share.add_share_quantity(quantity)
+            tmp_balance -= self.pf.get_share(key).value()
 
-        self.pf.setBAL(tmpBAL)
+        self.pf.set_BAL(tmp_balance)
         self.pf.notify()#each time we notify we send the pf
 
     def exit(self, time: datetime, verbose = False) -> None:
         if verbose:
             print("We exit the strat.")
 
-        tmpBAL = self.pf.value()
-        shares=self.pf.getShares()
+        tmp_balance = self.pf.value()
+        shares=self.pf.get_shares()
         for key in shares.keys():
             shares[key].setShareQuantity(0)
-        self.pf.setTCV (tmpBAL)
-        self.pf.setBAL (tmpBAL)
+        self.pf.set_TCV (tmp_balance)
+        self.pf.set_BAL (tmp_balance)
 
         #ATTENTION CHECK IF IT IS GOOD
-        self.pf.setState(pfstate.PortfolioIsReady(time, tmpBAL))
+        self.pf.set_state(pfstate.PortfolioIsReady())
         self.pf.notify()#my state is now to position closed
 
 

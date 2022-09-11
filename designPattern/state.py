@@ -1,40 +1,53 @@
 from abc import abstractmethod
-import datetime
+from operator import truediv
+# import datetime
 
-# The common state interface for all the states
-# Context = Portfolio, Share etc
-#https://auth0.com/blog/state-pattern-in-python/
-class state():
-    def __init__(self, _time: datetime, _value: float):
-        self.__savePfState__ = _value
-        self.__savePfTime__  = _time
+
+class StateAbstract():
+    # def __init__(self):
+    #     self.__savePfState__ = _value
+        # self.__savePfTime__  = _time
 
     @abstractmethod
-    def myStateIs (self) -> None:
+    def my_state_is (self) -> None:
         pass
 
     @abstractmethod
-    def getState (self) -> str:
+    def get_state (self) -> str:
         pass
-    
+
     @abstractmethod
-    def __str__(self): 
+    def __str__(self):
         pass
-    
+
     @abstractmethod
     def __eq__(self, other):
         pass
-    
-    def getValue (self) -> float:
-        return self.__savePfState__
+
+    # def get_value (self) -> float:
+    #     return self.__savePfState__
 
 
-class nothingState(state):
-    def __init__(self, _time: datetime, _value: float):
-        super().__init__(_time, _value)
-        
-    def __str__(self): 
+class NothingState(StateAbstract):
+    # def __init__(self):
+    #     super().__init__()
+
+    def __str__(self):
         return "nothing"
 
-    def myStateIs (self) -> None:
+    def my_state_is (self) -> None:
         print ("...")
+
+    def get_state (self) -> str:
+        return "nothing"
+
+    #Check again : Useless ?
+    def __eq__(self, other):
+        if isinstance(other, NothingState):
+            return True
+        return False
+
+# References
+# The common state interface for all the states
+# Context = Portfolio, Share etc
+#https://auth0.com/blog/state-pattern-in-python/

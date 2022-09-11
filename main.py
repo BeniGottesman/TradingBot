@@ -14,9 +14,10 @@ import Test.portfolioTest as pfTest
 import Test.MediatorTest as medTest
 
 clienSingletonInstance = bc.client()
-client = clienSingletonInstance.getClient()
+client = clienSingletonInstance.get_client()
 
 def main ():
-    medTest.testStrategy()
+    """Main function"""
+    medTest.test_strategy()
 
 main()
