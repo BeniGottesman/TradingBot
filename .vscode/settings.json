@@ -3,4 +3,9 @@
         "./design pattern",
         "./design pattern"
     ]
+    
+    "python.linting.pylintArgs": [
+        "--init-hook",
+        "import sys;import os; f=os.path.dirname(os.path.abspath(__file__));sys.path.append('f')"
+    ]
 }

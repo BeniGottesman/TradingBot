@@ -29,15 +29,16 @@ def test_strategy () -> None :
 
     #3rd I convert them into a dataframe
     print("To dataframe")
-    pairs = symbols_scrapped[quote_currency]
-    market_quotations = dr.CSVToDataFrameOfManyPairs(pairs, 'spot', '15m')
+    pairs_to_trade = symbols_scrapped[quote_currency]
+    market_quotations = dr.csv_to_dataframe_of_many_pairs(pairs_to_trade, 'spot', '15m')
     #We initialize the market quotation client
-    test = mq.MarketQuotationClient (market_quotations)
+    mq.MarketQuotationClient (market_quotations)
+    # test.get_client().set_quotations(market_quotations)
     print("To dataframe: Done.")
 
     #We create a new portfolio = 0 with the shares we will trade with
     for key in market_quotations:
-        my_portfolio.add(sh.cryptoCurrency(key))
+        my_portfolio.add_share(sh.cryptoCurrency(key))
 
     #Portfolio Response test
     # print(my_portfolio.get_number_of_shares())
@@ -57,4 +58,4 @@ def test_strategy () -> None :
     #mediator = med.Trading (JohannsenStrat, myPF)
 
     constant_std = 1.
-    johannsen_strategy.do_algorithm(my_portfolio, constant_std, symbols_scrapped, False)
+    johannsen_strategy.do_algorithm(my_portfolio, constant_std, pairs_to_trade, False)

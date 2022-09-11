@@ -16,7 +16,7 @@ def scrapDatas (check_crypto_volume: dict, parameters_scrap: dict, scrap=False)-
     #2nd I scrap the datas with the desired 24h-volume
     parameters_scrap["symbols"]=symbols_scrapped
     if scrap:
-        dr.retrieveHistoricFromBinanceDatas (parameters_scrap)
+        dr.retrieve_historic_from_binance_datas (parameters_scrap)
 
     return symbols_scrapped
 

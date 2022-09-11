@@ -27,7 +27,7 @@ def scrapandjohanssonTest():
     #3rd I convert them into a dataframe
     print("To dataframe")
     pairs = L['USDT']
-    data = dr.CSVToDataFrameOfManyPairs(pairs, 'spot', '15m')
+    data = dr.csv_to_dataframe_of_many_pairs(pairs, 'spot', '15m')
     print("To dataframe: Done.")
 
     print("Johansen Test")

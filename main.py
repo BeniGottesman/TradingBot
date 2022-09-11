@@ -1,20 +1,21 @@
-import BinanceClient as bc
-from datetime import date
-import os
-import dataRetrieving as dr
-import enums as cst
-import numpy as np
-import pandas as pd
-import maths.Statistics as statistics
-import backtest as bt
-import matplotlib.pyplot as plt
+# import BinanceClient as bc
+# from datetime import date
+# import os
+# import matplotlib.pyplot as plt
 
-import Test.ScrapAndJohanssonTest as ScrapAndJohansson
-import Test.portfolioTest as pfTest
+# import dataRetrieving as dr
+# import enums as cst
+# import numpy as np
+# import pandas as pd
+# import maths.Statistics as statistics
+# import backtest as bt
+
+# import Test.ScrapAndJohanssonTest as ScrapAndJohansson
+# import Test.portfolioTest as pfTest
 import Test.MediatorTest as medTest
 
-clienSingletonInstance = bc.client()
-client = clienSingletonInstance.get_client()
+# clienSingletonInstance = bc.client()
+# client = clienSingletonInstance.get_client()
 
 def main ():
     """Main function"""

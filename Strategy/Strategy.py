@@ -57,12 +57,12 @@ class BacktestCommand(StrategyCommandPortfolio):
         for key, quantity in list_investments.items(): #self.pf._children
             if not self.pf.is_key_exists(key):
                 new_share = pf.Share(key, quantity)#(key, quantity, time)
-                self.pf.add(new_share)
+                self.pf.add_share(new_share)
             else:
                 # child.addShareQuantity(time, quantity) and add to a dict
                 share = self.pf.get_share(key)
                 share.add_share_quantity(quantity)
-            tmp_balance -= self.pf.get_share(key).value()
+            tmp_balance -= self.pf.get_share(key).value(time)
 
         self.pf.set_BAL(tmp_balance)
         self.pf.notify()#each time we notify we send the pf
@@ -71,7 +71,7 @@ class BacktestCommand(StrategyCommandPortfolio):
         if verbose:
             print("We exit the strat.")
 
-        tmp_balance = self.pf.value()
+        tmp_balance = self.pf.value(time)
         shares=self.pf.get_shares()
         for key in shares.keys():
             shares[key].setShareQuantity(0)

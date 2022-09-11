@@ -2,14 +2,15 @@ import enums as cst
 import os
 import sys
 import pandas as pd
+import numpy as np
+
 fileDirectory = os.getcwd()
 sys.path.append(fileDirectory+"binanceDataRetrieve\\")
 from binanceDataRetrieve import downloadkline as dk
-import numpy as np
 import enums as cst
 
 #Download the datas from binance.data, inside data folder and
-def retrieveHistoricFromBinanceDatas (parameters_scrap):
+def retrieve_historic_from_binance_datas (parameters_scrap):
     folder = parameters_scrap["folder"]
     years = parameters_scrap["years"]
     months = parameters_scrap["months"]
@@ -26,27 +27,28 @@ def retrieveHistoricFromBinanceDatas (parameters_scrap):
                                    start_date, end_date, folder, checksum)
 
 #convert a csv file into a dataframe
-def CSVtoDataFrame (file)->pd.DataFrame:
+def csv_to_dataframe (file)->pd.DataFrame:
     filepkl = file.split(".")[0]+".pkl" #pickle is for reading quickly the csv
     # if not os.path.exists(filepkl):
     hist_df = pd.read_csv(file)
     hist_df.columns = cst.HISTORICAL_BINANCE_COLUMN
+    #As dates are returned from Binance as timestamps,
+    #we first divide by 1000 and then set the units to seconds to convert correctly.
     hist_df['Open Time'] = pd.to_datetime(hist_df['Open Time']/1000, unit='s')
     hist_df['Close Time'] = pd.to_datetime(hist_df['Close Time']/1000, unit='s')
     numeric_columns = ['Open', 'High', 'Low', 'Close', 'Volume',
                        'Quote Asset Volume', 'TB Base Volume', 'TB Quote Volume']
+    #We convert our objects into numerical values using the to_numeric function.
     hist_df[numeric_columns] = hist_df[numeric_columns].apply(pd.to_numeric, axis=1)
     hist_df.to_pickle(filepkl)
     os.remove(file)
-    # else:
-    #     hist_df = pd.read_pickle(filepkl)
 
     return hist_df
 
 #This Function Take A pair, trading type = ''spot'', and an interval=''15m''
 #then convert the csv file into a dataframe
 #hist_df = CSVFolderToDataFrame("BNBUSDT", "spot", "15m")
-def CSVPairFolderToDataFrame (pair, trading_type, interval,verbose=False)->pd.DataFrame:
+def csv_pair_folder_to_dataframe (pair, trading_type, interval,verbose=False)->pd.DataFrame:
     relative_path = "data\\"+trading_type+"\\monthly\\klines\\"+pair+"\\"+interval+"\\"
 
     #We now merge
@@ -55,7 +57,7 @@ def CSVPairFolderToDataFrame (pair, trading_type, interval,verbose=False)->pd.Da
         if file.endswith(".csv"):
             if verbose:
                 print ("merge = ", file)
-            frames.append (CSVtoDataFrame(relative_path+file))
+            frames.append (csv_to_dataframe(relative_path+file))
         elif file.endswith(".pkl"):
             frames.append (pd.read_pickle(relative_path+file))
     hist_df = pd.concat(frames)
@@ -64,18 +66,19 @@ def CSVPairFolderToDataFrame (pair, trading_type, interval,verbose=False)->pd.Da
 
 #Provide a list of pairs, then call CSVFolderToDataFrame() above
 #return dict of dataframe
-def CSVToDataFrameOfManyPairs (pairs, trading_type, interval)->dict:
+def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->dict[pd.DataFrame]:
     hist_df = {}
     minimum_date = np.datetime64("2001-01-01") #minimumDate is useful to cut every array
     #if type (pairs) != list:
     if not isinstance(pairs, list) :
         pairs = [pairs]
     for pair in pairs:
-        hist_df[pair] = CSVPairFolderToDataFrame (pair, trading_type, interval)
+        hist_df[pair] = csv_pair_folder_to_dataframe (pair, trading_type, interval)
         if minimum_date < hist_df[pair]['Open Time'].iloc[0]:
             minimum_date = hist_df[pair]['Open Time'].iloc[0]
     for pair in pairs:#every arrays will start with the same date
         hist_df[pair] = hist_df[pair].loc[(hist_df[pair]['Open Time'] > minimum_date)]
+    # print (hist_df['BTCUSDT']['Close Time'])
     return hist_df
 
 
@@ -105,3 +108,7 @@ def CSVToDataFrameOfManyPairs (pairs, trading_type, interval)->dict:
 
 
 # main()
+
+#References
+#https://www.section.io/engineering-education/a-gentle-introduction-to-the-python-binance-api/
+#https://stackoverflow.com/questions/57770943/python-keyerror-date-time

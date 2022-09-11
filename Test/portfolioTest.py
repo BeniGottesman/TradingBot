@@ -9,10 +9,10 @@ def testPortfolio () -> None :
     
     s1 = sh.cryptoCurrency("BTCUSD")
     s2 = sh.cryptoCurrency("ETHUSD")
-    myPF.add(s1)
-    myPF.add(s2)
+    myPF.add_share(s1)
+    myPF.add_share(s2)
     print(myPF.get_number_of_shares())
-    myPF.remove(s1)
+    myPF.remove_share(s1)
     print(myPF)
     print(myPF.get_number_of_shares())
     print("value = ", myPF.value())

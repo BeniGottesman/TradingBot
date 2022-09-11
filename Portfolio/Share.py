@@ -2,10 +2,12 @@ from __future__ import annotations
 # from abc import abstractmethod
 import string
 from typing import List
-from datetime import datetime
+import datetime
+import numpy as np
 #import Portfolio.PfState as st
 import designPattern.state as st
 import Portfolio.AbstractInstrument as ai
+import MarketQuotation as mq
 
 
 # Leaf
@@ -50,7 +52,7 @@ class cryptoCurrency(Share):
     #deprecated
     #market value
     def get_quote_current_value (self):
-        return self.__quoteCurrentValue__
+        return self.value()/self.__number_of_shares__
     #Deprecated
     # def updateMarketQuotation (self,  time: datetime, value: float, verbose = False) -> None:
     #     self.__quoteCurrentValue__ = value
@@ -60,8 +62,17 @@ class cryptoCurrency(Share):
 
     #return the value hold in $
     #ToUpdate
-    def value(self) -> str:
-        return self.__quoteCurrentValue__*self.__number_of_shares__
+    def value(self, time: datetime=datetime.date(1970, 1, 1)) -> str:
+        market_quotation = mq.MarketQuotationClient().get_client().get_quotation()
+        _share_name = self.__name__
+
+        #BUG
+        df = market_quotation[_share_name]
+        print (df['Close Time'].loc[time])
+        i = df['Close Time'].index(time)
+        _quote_current_value = df["Close"].iloc[i]
+        #BUG
+        return _quote_current_value * self.__number_of_shares__
 
     def is_key_exists (self, key: string) -> bool:
         if key != self.__name__:

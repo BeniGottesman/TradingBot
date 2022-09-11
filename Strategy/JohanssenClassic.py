@@ -12,7 +12,7 @@ import Portfolio.Portfolio as pf
 import Portfolio.PfState as pfstate
 import MarketQuotation as mq
 
-market_quotations = mq.MarketQuotation()
+# market_quotations = mq.MarketQuotation()
 
 class JohannsenClassic (st.Strategy):
     """JohannsenClassic is a class in which we apply the Johannsen strategy."""
@@ -30,7 +30,7 @@ class JohannsenClassic (st.Strategy):
         #initial_investment_percentage=This variable is 1 i.e. not used yet
         #i.e. 0.2% of the capital for instance
         self.__initial_investment_percentage__ = _initial_investment_percentage
-        self.__state__ = state.StrategyWaitToEntry(0,0)
+        self.__state__ = state.StrategyWaitToEntry()
 
 
     # c=0.75 -> mu +/- 0.75xsigma
@@ -40,6 +40,8 @@ class JohannsenClassic (st.Strategy):
         time_serie_size   = quotations.shape[0]
         number_of_shares  = quotations.shape[1]
         log_return = np.zeros(shape=(time_serie_size, number_of_shares))
+
+        market_quotation = mq.MarketQuotationClient().get_client().get_quotation()
 
         # First we compute the spread
         for i in range (number_of_shares):
@@ -80,7 +82,7 @@ class JohannsenClassic (st.Strategy):
             how_much_to_invest_weights = spread_weights/alpha
             #Next line To delete ?
             how_much_to_invest_weights = how_much_to_invest_weights/number_of_shares
- 
+
             mu_average      = np.mean (np.dot(log_return, how_much_to_invest_weights)) # Mean
             sigma   = np.var (np.dot(log_return, how_much_to_invest_weights)) # Variance
             sigma   = np.sqrt(sigma)
@@ -145,39 +147,46 @@ class JohannsenClassic (st.Strategy):
                     symbol_to_trade: list, verbose = False) -> None:
             # timeIndex = quotations[0].index
             # symbol_to_trade = list(symbol_to_trade.keys())
-            if len (symbol_to_trade) <= 0 :
-                print("No symbole to trade in your strategy.")
-                return
-                #We create a new portfolio = 0 with the shares we will trade with
-            for key in market_quotations:
-                my_portfolio.add(sh.cryptoCurrency(key))
-            size = len(symbol_to_trade[symbol_to_trade[0]]["Close"])
-            # print("size=",size)
-            
-            number_of_shares = my_portfolio.get_number_of_shares()
-            nparray_quotations = np.zeros(shape=(self.__rollingwindow__, number_of_shares))
-            i=0
-            while True:
-                beginning = i
-                end = self.__rollingwindow__ + i
-                if end >= size:
-                    break
-                my_shares = my_portfolio.get_shares()
-                j=0
-                for key in my_shares:
-                    #We take the transpose
-                    col = np.array (symbol_to_trade [key]["Close"] [ beginning : end ]).T
-                    nparray_quotations [:,j] = col
-                    # q = np.concatenate ([q, col], axis=1)
-                    j+=1
-                time_now = list (symbol_to_trade[symbol_to_trade[0]]["Close Time"][ beginning : end ])[-1]
-                self.do_one_day (time_now, my_portfolio, constant_std, symbol_to_trade, nparray_quotations, verbose)
-                
-                verbose = True
-                if verbose and i%1000==0:
-                    print("i =",i)
-                    print(my_portfolio)
-                    
-                i+=1
-            #portfolio.plot()
-            
+        if len (symbol_to_trade) <= 0 :
+            print("No symbole to trade in your strategy.")
+            return
+
+        #We create a new portfolio = 0 with the shares we will trade with
+        for key in symbol_to_trade:
+            my_portfolio.add_share(sh.cryptoCurrency(key))
+
+        market_quotation = mq.MarketQuotationClient().get_client().get_quotation()
+        # number_of_quotations_periods = len(symbol_to_trade[symbol_to_trade[0]]["Close"])
+        number_of_quotations_periods = len(market_quotation[symbol_to_trade[0]]["Close"])
+        # print("size=",size)
+
+        number_of_shares = my_portfolio.get_number_of_shares()
+        nparray_quotations = np.zeros(shape=(self.__rollingwindow__, number_of_shares))
+        i=0
+        while True:
+            beginning = i
+            end = self.__rollingwindow__ + i
+            if end >= number_of_quotations_periods:
+                break
+            my_shares = my_portfolio.get_shares()
+            j=0
+            for key in my_shares:
+                #We take the transpose
+                col = np.array (market_quotation [key]["Close"] [ beginning : end ]).T
+                nparray_quotations [:,j] = col
+                # q = np.concatenate ([q, col], axis=1)
+                j+=1
+            time_now =\
+                    list (market_quotation[symbol_to_trade[0]]["Close Time"][ beginning : end ])[-1]
+            self.do_one_day (time_now, my_portfolio,
+                            constant_std, symbol_to_trade,
+                            nparray_quotations, verbose)
+
+            verbose = True
+            if verbose and i%1000==0:
+                print("i =",i)
+                print(my_portfolio)
+
+            i+=1
+        #portfolio.plot()
+        

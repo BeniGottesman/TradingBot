@@ -7,20 +7,21 @@ import designPattern.state as st
 # Context = Portfolio, Share etc
 #https://auth0.com/blog/state-pattern-in-python/
 class StrategyState(st.StateAbstract):
-             #__savePfState__=Contain the value of the pf when we enter the strat -> useful for computing a stop loss
-    def __init__(self, _time: datetime, _value: float):
-        super().__init__(_time, _value)
-        
+    #__savePfState__=
+    # Contain the value of the pf when we enter the strat->useful for computing a stop loss
+    # def __init__(self):
+    #     super().__init__()
+
     @abstractmethod
     def my_state_is (self) -> None:
         pass
 
     @abstractmethod
-    def __str__(self): 
+    def __str__(self):
         pass
 
 class StrategyWaitToEntry (StrategyState):
-    def __str__(self): 
+    def __str__(self):
         return "waitToEntry"
 
     def my_state_is (self) -> None:
@@ -30,11 +31,12 @@ class StrategyWaitToEntry (StrategyState):
         return "WaitToEntry"
 
 class StrategyWaitToExit (StrategyState):
-    def __str__(self): 
+    def __str__(self):
         return "WaitToExit"
 
     def my_state_is (self) -> None:
         print ("Strategy : Wait for an exit Signal")
-    
+
     def get_state (self) -> None:
         return "WaitToExit"
+    

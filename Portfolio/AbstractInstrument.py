@@ -2,7 +2,7 @@ from __future__ import annotations
 from abc import abstractmethod
 import string
 from typing import List
-from datetime import datetime
+import datetime
 import Portfolio.PfState as st
 
 class AbstractInstrument:
@@ -58,8 +58,11 @@ class AbstractInstrument:
 
 
     @abstractmethod
-    def value(self) -> str:
-        pass
+    def value(self, time: datetime=datetime.date(1970, 1, 1)) -> str:
+        """
+        Return Value : Portfolio value, Share Value etc
+        """
+        # pass
 
     # @abstractmethod
     # def updateMarketQuotation (self,  time: datetime, list_quotations, verbose = False) -> None:

@@ -20,10 +20,10 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
     # def __init__(self, _type="currency", _name="generic portfolio") -> None:
     #     super().__init__(_type, _name)
 
-    def add(self, portfolio: AbstractPortfolio) -> None:
+    def add_share(self, portfolio: AbstractPortfolio) -> None:
         pass
 
-    def remove(self, portfolio: AbstractPortfolio) -> None:
+    def remove_share(self, portfolio: AbstractPortfolio) -> None:
         pass
 
     def is_composite(self) -> bool:
@@ -87,12 +87,12 @@ class severalPortfolios(AbstractPortfolio):
         #BAL = Balance
         self.__BAL__ = 0
 
-    def add(self, portfolio: AbstractPortfolio) -> None:
+    def add_share(self, portfolio: AbstractPortfolio) -> None:
         self.__portfolios__.append(portfolio)
         self.__TCV__ = self.get_TCV()
         portfolio.parent = self
 
-    def remove(self, portfolio: AbstractPortfolio) -> None:
+    def remove_share(self, portfolio: AbstractPortfolio) -> None:
         self.__TCV__ -= self.get_TCV()
         self.__portfolios__.remove(portfolio)
         portfolio.parent = None
@@ -236,7 +236,7 @@ class Portfolio(AbstractPortfolio):
     def get_TCV(self) -> float: #REmettre a jours avec les donnees actuelles de marche
         my_shares = self.__shares__
         tmp = 0
-        for key in my_shares.items():
+        for key, value in my_shares.items():
             tmp += my_shares[key].value()
         self.__TCV__ = tmp
         return self.__TCV__
@@ -277,10 +277,10 @@ class Portfolio(AbstractPortfolio):
         portfolio_content+= '\n'
         i=0
         my_shares = self.__shares__
-        for key in my_shares.items():
+        for key, this_share in my_shares.items():
             i+=1
             portfolio_content+= str(i)+". Share = "+key
-            portfolio_content+= ", quantity = "+str(self.__shares__[key].getShareQuantity())
+            portfolio_content+= ", quantity = "+str(this_share.get_share_quantity())
             portfolio_content+= '\n'
         return portfolio_content
 ####################operator overloading######################
@@ -297,7 +297,7 @@ class Portfolio(AbstractPortfolio):
         state_portfolios ["TCV"] = self.__TCV__
         state_portfolios ["BAL"] = self.__BAL__
         my_shares = self.__shares__
-        for key in my_shares.items():
+        for key, value in my_shares.items():
             share_quantity = my_shares[key].getShareQuantity()
             state_portfolios [key] = share_quantity
         return state_portfolios
@@ -312,7 +312,7 @@ class Portfolio(AbstractPortfolio):
         self.set_TCV(state_portfolios ["TCV"])
         self.set_BAL(state_portfolios ["BAL"])
         my_shares = self.__shares__
-        for key in my_shares.items():
+        for key, value in my_shares.items():
             share_quantity = state_portfolios [key]
             my_shares[key].setShareQuantity(share_quantity)
 
@@ -332,14 +332,16 @@ class Portfolio(AbstractPortfolio):
         return self.__shares__
 
     #add share
-    def add(self, _share: share.Share) -> None:
+    def add_share(self, _share: share.Share) -> None:
         key = _share.get_name()
+        if key in self.__shares__: #Rise an Exception
+            return
         self.__shares__ [key] = _share
         _share.parent = self #?
         self.__number_of_shares__ += 1
 
     #remove share
-    def remove(self, _share: share.Share) -> None:
+    def remove_share(self, _share: share.Share) -> None:
         key = _share.get_name()
         self.__shares__.pop(key, None)
         _share.parent = None #?
@@ -348,7 +350,7 @@ class Portfolio(AbstractPortfolio):
     def getWeightArrayOfShares (self) -> np.array:
         tmp_array = [] #np.array()
         my_shares = self.__shares__
-        for key in my_shares.items():
+        for key, value in my_shares.items():
             qty = my_shares[key].getShareQuantity()
             tmp_array = np.append(tmp_array, qty)
         return tmp_array
@@ -377,8 +379,9 @@ class Portfolio(AbstractPortfolio):
 ######overload operator for []######
     def __getitem__(self, key):
         my_shares = self.__shares__
-        if key in my_shares.items():
-            return self.__shares__[key]
+        for share_key, value in my_shares.items():
+            if key == share_key:#Test Validity
+                return self.__shares__[key]
     def __setitem__(self, key, value):
         self.__shares__[key] = value
 ######overload operator for []######
@@ -392,7 +395,7 @@ class Portfolio(AbstractPortfolio):
     def value(self) -> float:
         tmp_value = 0
         my_shares = self.__shares__
-        for key in my_shares.items():
+        for key, value in my_shares.items():
             tmp_value += self.__shares__[key].value()
         return tmp_value
 
@@ -412,7 +415,7 @@ class Portfolio(AbstractPortfolio):
         tmp_dict = {}
         tmp_dict["TCV"] = self.__TCV__
         tmp_dict["BAL"] = self.__BAL__
-        for key in children.items():
+        for key, value in children.items():
             tmp_dict[key] = children[key].report()
         return tmp_dict
 
