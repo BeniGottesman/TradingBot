@@ -66,12 +66,13 @@ class cryptoCurrency(Share):
         market_quotation = mq.MarketQuotationClient().get_client().get_quotation()
         _share_name = self.__name__
 
-        #BUG
+        ####BUG####
         df = market_quotation[_share_name]
         print (df['Close Time'].loc[time])
         i = df['Close Time'].index(time)
         _quote_current_value = df["Close"].iloc[i]
-        #BUG
+        ####BUG####
+
         return _quote_current_value * self.__number_of_shares__
 
     def is_key_exists (self, key: string) -> bool:
