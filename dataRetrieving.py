@@ -9,8 +9,11 @@ sys.path.append(fileDirectory+"binanceDataRetrieve\\")
 from binanceDataRetrieve import downloadkline as dk
 import enums as cst
 
-#Download the datas from binance.data, inside data folder and
+
 def retrieve_historic_from_binance_datas (parameters_scrap):
+    """
+    Download the datas from binance.data, inside data folder and
+    """
     folder = parameters_scrap["folder"]
     years = parameters_scrap["years"]
     months = parameters_scrap["months"]
@@ -26,8 +29,10 @@ def retrieve_historic_from_binance_datas (parameters_scrap):
                                    num_symbols, intervals, years, months,
                                    start_date, end_date, folder, checksum)
 
-#convert a csv file into a dataframe
 def csv_to_dataframe (file)->pd.DataFrame:
+    """
+    Convert a csv file into a DataFrame.
+    """
     filepkl = file.split(".")[0]+".pkl" #pickle is for reading quickly the csv
     # if not os.path.exists(filepkl):
     hist_df = pd.read_csv(file)
@@ -45,10 +50,12 @@ def csv_to_dataframe (file)->pd.DataFrame:
 
     return hist_df
 
-#This Function Take A pair, trading type = ''spot'', and an interval=''15m''
-#then convert the csv file into a dataframe
 #hist_df = CSVFolderToDataFrame("BNBUSDT", "spot", "15m")
 def csv_pair_folder_to_dataframe (pair, trading_type, interval,verbose=False)->pd.DataFrame:
+    """
+    This Function Take A pair, trading type = ''spot'', and an interval=''15m''.
+    Then convert the csv file into a dataframe.
+    """
     relative_path = "data\\"+trading_type+"\\monthly\\klines\\"+pair+"\\"+interval+"\\"
 
     #We now merge
@@ -64,24 +71,37 @@ def csv_pair_folder_to_dataframe (pair, trading_type, interval,verbose=False)->p
 
     return hist_df
 
-#Provide a list of pairs, then call CSVFolderToDataFrame() above
-#return dict of dataframe
+
 def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->dict[pd.DataFrame]:
-    hist_df = {}
+    """
+    Provide a list of pairs, then call CSVFolderToDataFrame() above, and
+    return dict of dataframe.
+    /*\ Warning read reference : /*\
+    /*\ https://stackoverflow.com/questions/13784192/creating-an-empty-pandas-dataframe-then-filling-it
+    """
+    market_history_df = []
     minimum_date = np.datetime64("2001-01-01") #minimumDate is useful to cut every array
     #if type (pairs) != list:
     if not isinstance(pairs, list) :
         pairs = [pairs]
     for pair in pairs:
-        hist_df[pair] = csv_pair_folder_to_dataframe (pair, trading_type, interval)
-        if minimum_date < hist_df[pair]['Open Time'].iloc[0]:
-            minimum_date = hist_df[pair]['Open Time'].iloc[0]
-    for pair in pairs:#every arrays will start with the same date
-        hist_df[pair] = hist_df[pair].loc[(hist_df[pair]['Open Time'] > minimum_date)]
-    # print (hist_df['BTCUSDT']['Close Time'])
-    return hist_df
+        market_history_df[pair] = csv_pair_folder_to_dataframe (pair, trading_type, interval)
+        if minimum_date < market_history_df[pair]['Open Time'].iloc[0]:
+            minimum_date = market_history_df[pair]['Open Time'].iloc[0]
+    #every arrays will start with the same date.
+    for pair in pairs:
+        market_history_df[pair] =\
+            market_history_df[pair].loc[(market_history_df[pair]['Open Time'] > minimum_date)]
+
+    #Now we reconstruct a multi-index Open+Close Time
+    #First we do a conversion List/Dict To Dataframe
+    market_history_df = pd.DataFrame (market_history_df)
+    market_history_df = market_history_df.set_index(['Open Time', 'Close Time'], inplace=True)
+
+    return market_history_df
 
 
+#Some testing functions
 # def main():
     # test = st.pairsTrading()
     # checkCryptoVolume = {}
@@ -112,3 +132,5 @@ def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->dict[pd.Data
 #References
 #https://www.section.io/engineering-education/a-gentle-introduction-to-the-python-binance-api/
 #https://stackoverflow.com/questions/57770943/python-keyerror-date-time
+#NEVER grow a DataFrame row-wise!
+#https://stackoverflow.com/questions/13784192/creating-an-empty-pandas-dataframe-then-filling-it

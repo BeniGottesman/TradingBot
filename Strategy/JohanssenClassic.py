@@ -189,4 +189,7 @@ class JohannsenClassic (st.Strategy):
 
             i+=1
         #portfolio.plot()
-        
+
+      
+# References
+# Binance Fees calculator : https://www.binance.com/en/support/faq/e85d6e703b874674840122196b89780a
