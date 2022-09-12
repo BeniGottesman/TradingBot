@@ -10,7 +10,7 @@ import Strategy.Strategy as st
 import Portfolio.Share as sh
 import Portfolio.Portfolio as pf
 import Portfolio.PfState as pfstate
-import MarketQuotation as mq
+import marketquotation as mq
 
 # market_quotations = mq.MarketQuotation()
 
@@ -103,16 +103,16 @@ class JohannsenClassic (st.Strategy):
 
                 if spread[-1] < mu_average-constant_std*sigma: #we start the Long strategy
                     self.__backtest__.entry(time_now, investment_dict)
-                    portfolio_value = portfolio.get_TCV()
+                    portfolio_value = portfolio.get_TCV(time_now)
                     self.__state__ = state.StrategyWaitToExit()
                 if spread[-1] > mu_average+constant_std*sigma: #we start the Short strategy
                      # or -howMuchToInvestWeights ?
                     self.__backtest__.entry(time_now, investment_dict)
-                    portfolio_value = portfolio.get_TCV()
+                    portfolio_value = portfolio.get_TCV(time_now)
                     self.__state__ = state.StrategyWaitToExit()
             elif present_strategy_state == "WaitToExit":
                 old_pf_value = self.__state__.get_value()
-                portfolio_value = portfolio.get_TCV()
+                portfolio_value = portfolio.get_TCV(time_now)
                 if spread[-1] < mu_average-constant_std*sigma: #we exit the Short strategy
                     self.__backtest__.exit(time_now)
                     self.__state__ = state.StrategyWaitToEntry()
@@ -156,9 +156,12 @@ class JohannsenClassic (st.Strategy):
             my_portfolio.add_share(sh.cryptoCurrency(key))
 
         market_quotation = mq.MarketQuotationClient().get_client().get_quotation()
+        #see (1)
         # number_of_quotations_periods = len(symbol_to_trade[symbol_to_trade[0]]["Close"])
-        number_of_quotations_periods = len(market_quotation[symbol_to_trade[0]]["Close"])
-        # print("size=",size)
+        # number_of_quotations_periods = number of rows
+        number_of_quotations_periods = len(market_quotation[symbol_to_trade[0]])
+        # number_of_quotations_periods = market_quotation.shape[0]
+        # print("size=",market_quotation)
 
         number_of_shares = my_portfolio.get_number_of_shares()
         nparray_quotations = np.zeros(shape=(self.__rollingwindow__, number_of_shares))
@@ -176,8 +179,11 @@ class JohannsenClassic (st.Strategy):
                 nparray_quotations [:,j] = col
                 # q = np.concatenate ([q, col], axis=1)
                 j+=1
+            #index.get_level_values, see (2): Selecting from multi-index pandas
             time_now =\
-                    list (market_quotation[symbol_to_trade[0]]["Close Time"][ beginning : end ])[-1]
+                    market_quotation[symbol_to_trade[0]][ beginning : end ].index.get_level_values('Close Time')[-1]
+                    #list (market_quotation[symbol_to_trade[0]]["Close Time"][ beginning : end ])[-1]
+            # list (market_quotation[symbol_to_trade[0]].iloc[market_quotation.index.get_level_values('Close Time') == 1]["Close Time"][ beginning : end ])[-1]
             self.do_one_day (time_now, my_portfolio,
                             constant_std, symbol_to_trade,
                             nparray_quotations, verbose)
@@ -190,6 +196,7 @@ class JohannsenClassic (st.Strategy):
             i+=1
         #portfolio.plot()
 
-      
 # References
 # Binance Fees calculator : https://www.binance.com/en/support/faq/e85d6e703b874674840122196b89780a
+#(1) https://stackoverflow.com/questions/15943769/how-do-i-get-the-row-count-of-a-pandas-dataframe
+#(2) https://stackoverflow.com/questions/18835077/selecting-from-multi-index-pandas

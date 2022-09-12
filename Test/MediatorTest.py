@@ -3,9 +3,9 @@ import Portfolio.Share as sh
 import Strategy.JohanssenClassic as jo
 import mediator as med
 import enums as cst
-import backtest as bt
-import dataRetrieving as dr
-import MarketQuotation as mq
+import scrapdatas as bt
+import dataretrieving as dr
+import marketquotation as mq
 
 
 def test_strategy () -> None :
@@ -25,7 +25,7 @@ def test_strategy () -> None :
                   "startDate": "2017-01", "endDate": "2022-08",
                   "checksum": False}
     do_i_scrap = False #Turn to true for scrapping market datas
-    symbols_scrapped = bt.scrapDatas(check_crypto_volume, parameters_scrap, do_i_scrap)
+    symbols_scrapped = bt.scrap_datas(check_crypto_volume, parameters_scrap, do_i_scrap)
 
     #3rd I convert them into a dataframe
     print("To dataframe")

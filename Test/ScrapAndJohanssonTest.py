@@ -1,11 +1,11 @@
 from datetime import date
 import os
-import dataRetrieving as dr
+import dataretrieving as dr
 import enums as cst
 import numpy as np
 import pandas as pd
 import maths.Statistics as statistics
-import backtest as bt
+import scrapdatas as bt
 import matplotlib.pyplot as plt
 
 def scrapandjohanssonTest():
@@ -22,7 +22,7 @@ def scrapandjohanssonTest():
                   "startDate": "2017-01", "endDate": "2022-08",
                   "checksum": False}
     Iscrap = False #Turn to true for scrapping market datas
-    L = bt.scrapDatas(checkCryptoVolume, paramScrap, Iscrap)
+    L = bt.scrap_datas(checkCryptoVolume, paramScrap, Iscrap)
 
     #3rd I convert them into a dataframe
     print("To dataframe")

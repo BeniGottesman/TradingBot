@@ -7,7 +7,7 @@ import numpy as np
 #import Portfolio.PfState as st
 import designPattern.state as st
 import Portfolio.AbstractInstrument as ai
-import MarketQuotation as mq
+import marketquotation as mq
 
 
 # Leaf
@@ -66,12 +66,12 @@ class cryptoCurrency(Share):
         market_quotation = mq.MarketQuotationClient().get_client().get_quotation()
         _share_name = self.__name__
 
-        ####BUG####
-        df = market_quotation[_share_name]
-        print (df['Close Time'].loc[time])
-        i = df['Close Time'].index(time)
-        _quote_current_value = df["Close"].iloc[i]
-        ####BUG####
+        ####Enhanced this part####
+        tmp_df = market_quotation[_share_name]
+        tmp_df_closetime = tmp_df.index.get_level_values('Close Time')
+        tmp_df = tmp_df.iloc[tmp_df_closetime == time]
+        #see (2) about iloc
+        _quote_current_value = tmp_df["Close"].iloc[0]
 
         return _quote_current_value * self.__number_of_shares__
 
@@ -83,3 +83,4 @@ class cryptoCurrency(Share):
 
 # References
 # https://refactoring.guru/fr/design-patterns/composite/python/example
+#(2) https://stackoverflow.com/questions/16729574/how-can-i-get-a-value-from-a-cell-of-a-dataframe

@@ -1,14 +1,17 @@
-import BinanceClient as bc
-import dataRetrieving as dr
+import binanceclient as bc
+import dataretrieving as dr
 import enums as cst
 import maths.Statistics as statistics
 
 clientSingletonInstance = bc.client()
 client = clientSingletonInstance.get_client()
 
-#checkCryptoVolume contain the crypto and the 24h-volume minimum to download
-#paramScrap contain every parameters for scrapping
-def scrapDatas (check_crypto_volume: dict, parameters_scrap: dict, scrap=False)-> dict:
+def scrap_datas (check_crypto_volume: dict, parameters_scrap: dict, scrap=False)-> dict:
+    """
+    CheckCryptoVolume contain the crypto and the 24h-volume minimum to download
+    parameters_scrap contain every parameters for scrapping
+    """
+
     #1st we check the market with high exchange volume
     symbols_scrapped = get_pairs_volume(**check_crypto_volume)
     print(symbols_scrapped)
@@ -20,9 +23,13 @@ def scrapDatas (check_crypto_volume: dict, parameters_scrap: dict, scrap=False)-
 
     return symbols_scrapped
 
-# We provide a dict checkCryptoVolume['BTC']  = 100,
-# And return every pairs XXXBTC such that the volume is over 100 last 24h
+
 def get_pairs_volume(**asset)-> dict:
+    """
+    We provide a dict checkCryptoVolume['BTC']  = 100,
+    and return every pairs XXXBTC such that the volume is over 100 last 24h
+    """
+
     # import symbols from exchange infos
     symbols = {}
     for symbol in client.get_exchange_info()['symbols']:
@@ -37,10 +44,10 @@ def get_pairs_volume(**asset)-> dict:
 
     dic_symbols = {}
     #LTCBTC = LTC = Base Asset, BTC = Quote Asset
-    for quote_asset, value in asset.items():#qA=Quote Asset
+    for quote_asset, _ in asset.items():#qA=Quote Asset
         dic_symbols[quote_asset] = 0
         pair = [] #exemple BTCUSDT
-        for key, item in symbols.items():
+        for __, item in symbols.items():
             base_assets = item['baseAsset']
             if float(item['quoteVolume'])> float(asset[quote_asset])\
                 and item['quoteAsset']==quote_asset:

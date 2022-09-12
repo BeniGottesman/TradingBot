@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 from abc import abstractmethod
+import datetime
 import string
 from typing import List
 import numpy as np
@@ -87,13 +88,13 @@ class severalPortfolios(AbstractPortfolio):
         #BAL = Balance
         self.__BAL__ = 0
 
-    def add_share(self, portfolio: AbstractPortfolio) -> None:
+    def add_share(self, portfolio: AbstractPortfolio, time: datetime=datetime.date(1970, 1, 1)) -> None:
         self.__portfolios__.append(portfolio)
-        self.__TCV__ = self.get_TCV()
+        self.__TCV__ = self.get_TCV(time)
         portfolio.parent = self
 
-    def remove_share(self, portfolio: AbstractPortfolio) -> None:
-        self.__TCV__ -= self.get_TCV()
+    def remove_share(self, portfolio: AbstractPortfolio, time: datetime=datetime.date(1970, 1, 1)) -> None:
+        self.__TCV__ -= self.get_TCV(time)
         self.__portfolios__.remove(portfolio)
         portfolio.parent = None
 
@@ -121,14 +122,14 @@ class severalPortfolios(AbstractPortfolio):
 
     #########################
     ####TCV getter setter####
-    def get_TCV(self) -> float:
+    def get_TCV(self, time: datetime=datetime.date(1970, 1, 1)) -> float:
         tmp_TCV = 0
         for portfolio in self.__portfolios__:
-            tmp_TCV += portfolio.get_TCV()
+            tmp_TCV += portfolio.get_TCV(time)
         return tmp_TCV
     ### WARNING WHEN USE IT
-    def set_TCV(self, value: float) -> None:
-        if value > self.get_TCV():
+    def set_TCV(self, value: float, time: datetime=datetime.date(1970, 1, 1)) -> None:
+        if value > self.get_TCV(time):
             self.__TCV__ = value
     def add_TCV(self, value: float) -> None:
         self.__TCV__ += value
@@ -152,13 +153,13 @@ class severalPortfolios(AbstractPortfolio):
         return tmp_BAL
     # WARNING WHEN USE IT
     #LA TCV EVOLUE INDEPENDEMMENT DE LA BAL
-    def set_BAL(self, value: float) -> None:
-        if value > self.get_TCV():#SAUF CAS PARTICULIER OU BAL>TCV ...
+    def set_BAL(self, value: float, time: datetime=datetime.date(1970, 1, 1)) -> None:
+        if value > self.get_TCV(time):#SAUF CAS PARTICULIER OU BAL>TCV ...
             self.__BAL__ = value
         self.__BAL__ = value
-    def add_BAL(self, value: float) -> None:
+    def add_BAL(self, value: float, time: datetime=datetime.date(1970, 1, 1)) -> None:
         self.__BAL__ += value
-        tmp_TCV = self.get_TCV()
+        tmp_TCV = self.get_TCV(time)
         self.__BAL__ = min(self.__BAL__, tmp_TCV)
     # WARNING WHEN USE IT
     ####BAL getter setter####
@@ -233,17 +234,21 @@ class Portfolio(AbstractPortfolio):
 
 #####################################
 ##########TCV getter setter##########
-    def get_TCV(self) -> float: #REmettre a jours avec les donnees actuelles de marche
+    # return the TCV and (very important) UPDATE it.
+    def get_TCV(self,\
+                time: datetime=datetime.date(1970, 1, 1))-> float:
         my_shares = self.__shares__
         tmp = 0
-        for key, value in my_shares.items():
-            tmp += my_shares[key].value()
-        self.__TCV__ = tmp
+        for key, _ in my_shares.items():
+            tmp += my_shares[key].value(time)
+        self.__TCV__ = tmp #UPDATE Step
         return self.__TCV__
 
+    #Warning you change it, without market quotation
     def set_TCV(self, value: float) -> None:
         self.__TCV__ = value
 
+    #Warning you change it, without market quotation
     def add_TCV(self, value: float) -> None:
         self.__TCV__ += value
 ##########TCV getter setter##########
@@ -263,8 +268,10 @@ class Portfolio(AbstractPortfolio):
 ##############################################################
 ####################operator overloading######################
     # add two portfolios TCV
+    #Not working since get_TCV(TIME)
     def __add__(self, other) -> None:
-        return self.get_TCV()+other.getTCV()
+        # return self.get_TCV()+other.getTCV()
+        return self.__TCV__+other.__TCV__
 
     def __str__(self):
         portfolio_content= "Portfolio = " + self.__name__
@@ -297,7 +304,7 @@ class Portfolio(AbstractPortfolio):
         state_portfolios ["TCV"] = self.__TCV__
         state_portfolios ["BAL"] = self.__BAL__
         my_shares = self.__shares__
-        for key, value in my_shares.items():
+        for key, _ in my_shares.items():
             share_quantity = my_shares[key].getShareQuantity()
             state_portfolios [key] = share_quantity
         return state_portfolios
@@ -312,7 +319,7 @@ class Portfolio(AbstractPortfolio):
         self.set_TCV(state_portfolios ["TCV"])
         self.set_BAL(state_portfolios ["BAL"])
         my_shares = self.__shares__
-        for key, value in my_shares.items():
+        for key, _ in my_shares.items():
             share_quantity = state_portfolios [key]
             my_shares[key].setShareQuantity(share_quantity)
 
@@ -350,7 +357,7 @@ class Portfolio(AbstractPortfolio):
     def getWeightArrayOfShares (self) -> np.array:
         tmp_array = [] #np.array()
         my_shares = self.__shares__
-        for key, value in my_shares.items():
+        for key, _ in my_shares.items():
             qty = my_shares[key].getShareQuantity()
             tmp_array = np.append(tmp_array, qty)
         return tmp_array
@@ -379,7 +386,7 @@ class Portfolio(AbstractPortfolio):
 ######overload operator for []######
     def __getitem__(self, key):
         my_shares = self.__shares__
-        for share_key, value in my_shares.items():
+        for share_key, _ in my_shares.items():
             if key == share_key:#Test Validity
                 return self.__shares__[key]
     def __setitem__(self, key, value):
@@ -395,7 +402,7 @@ class Portfolio(AbstractPortfolio):
     def value(self) -> float:
         tmp_value = 0
         my_shares = self.__shares__
-        for key, value in my_shares.items():
+        for key, _ in my_shares.items():
             tmp_value += self.__shares__[key].value()
         return tmp_value
 
@@ -415,7 +422,7 @@ class Portfolio(AbstractPortfolio):
         tmp_dict = {}
         tmp_dict["TCV"] = self.__TCV__
         tmp_dict["BAL"] = self.__BAL__
-        for key, value in children.items():
+        for key, _ in children.items():
             tmp_dict[key] = children[key].report()
         return tmp_dict
 

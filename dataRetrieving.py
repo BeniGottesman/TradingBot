@@ -1,4 +1,3 @@
-import enums as cst
 import os
 import sys
 import pandas as pd
@@ -72,14 +71,16 @@ def csv_pair_folder_to_dataframe (pair, trading_type, interval,verbose=False)->p
     return hist_df
 
 
-def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->dict[pd.DataFrame]:
+def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->list[pd.DataFrame]:
     """
     Provide a list of pairs, then call CSVFolderToDataFrame() above, and
     return dict of dataframe.
-    /*\ Warning read reference : /*\
-    /*\ https://stackoverflow.com/questions/13784192/creating-an-empty-pandas-dataframe-then-filling-it
+    Every pairs does not start at the same time, (e.g. BTC start in 2013 vs LUNA in 2019)
+    So we make it (e.g. BTC dataframe shall start in 2019 like LUNA)
+/*\ Warning read reference : /*\
+/*\ https://stackoverflow.com/questions/13784192/creating-an-empty-pandas-dataframe-then-filling-it
     """
-    market_history_df = []
+    market_history_df = {}
     minimum_date = np.datetime64("2001-01-01") #minimumDate is useful to cut every array
     #if type (pairs) != list:
     if not isinstance(pairs, list) :
@@ -92,11 +93,15 @@ def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->dict[pd.Data
     for pair in pairs:
         market_history_df[pair] =\
             market_history_df[pair].loc[(market_history_df[pair]['Open Time'] > minimum_date)]
+        #for inplace=True, see (2)
+        market_history_df[pair].set_index(['Open Time', 'Close Time'], inplace=True)
 
-    #Now we reconstruct a multi-index Open+Close Time
-    #First we do a conversion List/Dict To Dataframe
-    market_history_df = pd.DataFrame (market_history_df)
-    market_history_df = market_history_df.set_index(['Open Time', 'Close Time'], inplace=True)
+    #We do a conversion List/Dict To Dataframe
+    #We construct with a multi-index w.r.t. Open+Close Time
+    # market_history_df = pd.DataFrame ([market_history_df])#, index=['Open Time', 'Close Time']
+    # market_history_df = pd.concat(market_history_df, axis=1)
+    # print(market_history_df['BTCUSDT'])
+    # market_history_df = market_history_df.set_index(['Open Time', 'Close Time'], inplace=True)
 
     return market_history_df
 
@@ -134,3 +139,4 @@ def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->dict[pd.Data
 #https://stackoverflow.com/questions/57770943/python-keyerror-date-time
 #NEVER grow a DataFrame row-wise!
 #https://stackoverflow.com/questions/13784192/creating-an-empty-pandas-dataframe-then-filling-it
+#(2) https://stackoverflow.com/questions/24041436/set-multiindex-of-an-existing-dataframe-in-pandas

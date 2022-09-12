@@ -12,7 +12,7 @@
 
 # import Test.ScrapAndJohanssonTest as ScrapAndJohansson
 # import Test.portfolioTest as pfTest
-import Test.MediatorTest as medTest
+import Test.mediatortest as medTest
 
 # clienSingletonInstance = bc.client()
 # client = clienSingletonInstance.get_client()
