@@ -11,7 +11,6 @@ class Memento(ABC):
     state.
     """
     def __init__(self, content):
- 
         """put all your file content here"""
         self.content = content
 
@@ -27,7 +26,7 @@ class Memento(ABC):
 class ConcreteMemento(Memento):
     def __init__(self, timeStrat: datetime, state: dict) -> None:
         self._state = state
-        self._timeStrat = timeStrat # Strategy time
+        self._time_strategy = timeStrat # Strategy time
         self._date = str(datetime.now())[:19] # Computer time
 
     def get_state(self) -> dict:
@@ -40,7 +39,7 @@ class ConcreteMemento(Memento):
         """
         The rest of the methods are used by the Caretaker to display metadata.
         """
-        return f"{self._date}-{self._timeStrat} / ({self._state[0:1]}...)"
+        return f"{self._date}-{self._time_strategy} / ({self._state[0:1]}...)"
 
     def get_date(self) -> str:
         return self._date

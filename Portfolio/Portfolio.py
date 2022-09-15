@@ -13,7 +13,7 @@ import designPattern.observer as obs
 import designPattern.Memento as Memento
 import Portfolio.PfState as state
 import Portfolio.Share as share
-import Portfolio.AbstractInstrument as ai
+import Portfolio.abstractinstrument as ai
 
 class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
 
@@ -48,10 +48,16 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
         pass
 
     @abstractmethod
-    def notify(self, verbose = False) -> None:        
+    def notify(self, verbose = False) -> None:
+        """
+        For observer pattern
+        """
         pass
     @abstractmethod
-    def report(self, verbose = False) -> dict:       
+    def report(self, verbose = False) -> dict:
+        """
+        Create q report and Notify the observators
+        """
         pass
     #########Observer Pattern#########
     ##################################
@@ -78,8 +84,34 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
     ####Memento Pattern####
     #######################
 
+    #################
+    ####TCV & BAL####
+    @abstractmethod
+    def get_TCV(self) -> float:
+        pass
+    @abstractmethod
+    def set_TCV(self, value: float) -> None:
+        pass
+    @abstractmethod
+    def add_TCV(self, value: float) -> None:
+        pass
+
+    #BAL getter setter
+    @abstractmethod
+    def get_BAL(self) -> float:
+        pass
+    @abstractmethod
+    def set_BAL(self, value: float) -> None:
+        pass
+    @abstractmethod
+    def add_BAL(self, value: float) -> None:
+        pass
+    ####TCV & BAL####
+    #################
+
+
 #https://wiki.profittrailer.com/en/webinterfaceguide
-class severalPortfolios(AbstractPortfolio):
+class SeveralPortfolios(AbstractPortfolio):
     def __init__(self, _type="currency?", _name="generic Bunch of portfolio") -> None:
         super().__init__(_type, _name)
         self.__portfolios__: List[AbstractPortfolio] = []
@@ -88,13 +120,13 @@ class severalPortfolios(AbstractPortfolio):
         #BAL = Balance
         self.__BAL__ = 0
 
-    def add_share(self, portfolio: AbstractPortfolio, time: datetime=datetime.date(1970, 1, 1)) -> None:
+    def add_share(self, portfolio: AbstractPortfolio) -> None:
         self.__portfolios__.append(portfolio)
-        self.__TCV__ = self.get_TCV(time)
+        self.__TCV__ = self.get_TCV()
         portfolio.parent = self
 
-    def remove_share(self, portfolio: AbstractPortfolio, time: datetime=datetime.date(1970, 1, 1)) -> None:
-        self.__TCV__ -= self.get_TCV(time)
+    def remove_share(self, portfolio: AbstractPortfolio) -> None:
+        self.__TCV__ -= self.get_TCV()
         self.__portfolios__.remove(portfolio)
         portfolio.parent = None
 
@@ -120,28 +152,40 @@ class severalPortfolios(AbstractPortfolio):
     ####Memento Pattern####
     #######################
 
+    ####################################
+    ##########Portfolio Update##########
+    def update_portfolio(self, time: datetime=datetime.date(1970, 1, 1))-> None:
+        """
+        Update the portfolio
+        """
+        for portfolio in self.__portfolios__:
+            portfolio.update_portfolio(time)
+
+    ##########Portfolio Update##########
+    ####################################
+
     #########################
     ####TCV getter setter####
-    def get_TCV(self, time: datetime=datetime.date(1970, 1, 1)) -> float:
+    def get_TCV(self) -> float:
         tmp_TCV = 0
         for portfolio in self.__portfolios__:
-            tmp_TCV += portfolio.get_TCV(time)
+            tmp_TCV += portfolio.get_TCV()
         return tmp_TCV
     ### WARNING WHEN USE IT
-    def set_TCV(self, value: float, time: datetime=datetime.date(1970, 1, 1)) -> None:
-        if value > self.get_TCV(time):
+    def set_TCV(self, value: float) -> None:
+        if value > self.get_TCV():
             self.__TCV__ = value
     def add_TCV(self, value: float) -> None:
         self.__TCV__ += value
     ### WARNING WHEN USE IT
-    
+
     ####TCV getter setter####
     #########################
 
     def getWeightArrayOfShares (self) -> np.array:
         tmp_array = [] #np.array()
         for portfolio in self.__portfolios__:
-             tmp_array = np.append(tmp_array, portfolio.getWeightArrayOfShares())
+            tmp_array = np.append(tmp_array, portfolio.getWeightArrayOfShares())
         return tmp_array
 
     #########################
@@ -153,13 +197,13 @@ class severalPortfolios(AbstractPortfolio):
         return tmp_BAL
     # WARNING WHEN USE IT
     #LA TCV EVOLUE INDEPENDEMMENT DE LA BAL
-    def set_BAL(self, value: float, time: datetime=datetime.date(1970, 1, 1)) -> None:
-        if value > self.get_TCV(time):#SAUF CAS PARTICULIER OU BAL>TCV ...
+    def set_BAL(self, value: float) -> None:
+        if value > self.get_TCV():#SAUF CAS PARTICULIER OU BAL>TCV ...
             self.__BAL__ = value
         self.__BAL__ = value
-    def add_BAL(self, value: float, time: datetime=datetime.date(1970, 1, 1)) -> None:
+    def add_BAL(self, value: float) -> None:
         self.__BAL__ += value
-        tmp_TCV = self.get_TCV(time)
+        tmp_TCV = self.get_TCV()
         self.__BAL__ = min(self.__BAL__, tmp_TCV)
     # WARNING WHEN USE IT
     ####BAL getter setter####
@@ -234,21 +278,17 @@ class Portfolio(AbstractPortfolio):
 
 #####################################
 ##########TCV getter setter##########
-    # return the TCV and (very important) UPDATE it.
-    def get_TCV(self,\
-                time: datetime=datetime.date(1970, 1, 1))-> float:
-        my_shares = self.__shares__
-        tmp = 0
-        for key, _ in my_shares.items():
-            tmp += my_shares[key].value(time)
-        self.__TCV__ = tmp #UPDATE Step
+    def get_TCV(self)-> float:
+        """
+        return the Total Current Value
+        """
         return self.__TCV__
 
     #Warning you change it, without market quotation
     def set_TCV(self, value: float) -> None:
         self.__TCV__ = value
 
-    #Warning you change it, without market quotation
+    #Warning - you change it, without market quotation or without BAL
     def add_TCV(self, value: float) -> None:
         self.__TCV__ += value
 ##########TCV getter setter##########
@@ -304,8 +344,8 @@ class Portfolio(AbstractPortfolio):
         state_portfolios ["TCV"] = self.__TCV__
         state_portfolios ["BAL"] = self.__BAL__
         my_shares = self.__shares__
-        for key, _ in my_shares.items():
-            share_quantity = my_shares[key].getShareQuantity()
+        for key, this_share in my_shares.items():
+            share_quantity = this_share.getShareQuantity()
             state_portfolios [key] = share_quantity
         return state_portfolios
 
@@ -319,9 +359,9 @@ class Portfolio(AbstractPortfolio):
         self.set_TCV(state_portfolios ["TCV"])
         self.set_BAL(state_portfolios ["BAL"])
         my_shares = self.__shares__
-        for key, _ in my_shares.items():
+        for key, this_share in my_shares.items():
             share_quantity = state_portfolios [key]
-            my_shares[key].setShareQuantity(share_quantity)
+            this_share[key].setShareQuantity(share_quantity)
 
 ####################MEMENTO PATTERN######################
 #########################################################
@@ -357,8 +397,8 @@ class Portfolio(AbstractPortfolio):
     def getWeightArrayOfShares (self) -> np.array:
         tmp_array = [] #np.array()
         my_shares = self.__shares__
-        for key, _ in my_shares.items():
-            qty = my_shares[key].getShareQuantity()
+        for _, this_share in my_shares.items():
+            qty = this_share.getShareQuantity()
             tmp_array = np.append(tmp_array, qty)
         return tmp_array
 
@@ -397,13 +437,28 @@ class Portfolio(AbstractPortfolio):
     def get_portfolio_currency (self) -> string:
         return self.__quote_currency__
 
-    #return the BAL, by induction,
-    #it is preferable to updateValues before
-    def value(self) -> float:
+####################################
+##########Portfolio Update##########
+    def update_portfolio(self, time: datetime=datetime.date(1970, 1, 1))-> None:
+        """
+        Update the portfolio
+        """
+        tmp = self.value (time)
+        #UPDATE Step
+        self.__TCV__ = tmp
+        # self.__BAL__ = tmp
+##########Portfolio Update##########
+####################################
+
+    def value(self, time: datetime=datetime.date(1970, 1, 1)) -> float:
+        """
+        return the TCV, by induction,
+        it is preferable to updateValues before
+        """
         tmp_value = 0
         my_shares = self.__shares__
-        for key, _ in my_shares.items():
-            tmp_value += self.__shares__[key].value()
+        for _, this_share in my_shares.items():
+            tmp_value += this_share.value(time)
         return tmp_value
 
     #Update the quote value of the pairs

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List
-import Portfolio.Portfolio as pf
+import Portfolio.portfolio as pf
 import Portfolio.PfState as pfstate
 import datetime
 
@@ -68,13 +68,19 @@ class BacktestCommand(StrategyCommandPortfolio):
         self.pf.notify()#each time we notify we send the pf
 
     def exit(self, time: datetime, verbose = False) -> None:
+        """
+        Here, when we exit, we release every shares.
+        """
         if verbose:
             print("We exit the strat.")
 
         tmp_balance = self.pf.value(time)
-        shares=self.pf.get_shares()
+        shares = self.pf.get_shares()
         for key in shares.keys():
+            # We release every shares
             shares[key].setShareQuantity(0)
+
+        #Then we update the portfolio
         self.pf.set_TCV (tmp_balance)
         self.pf.set_BAL (tmp_balance)
 

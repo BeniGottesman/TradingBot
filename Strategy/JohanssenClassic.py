@@ -8,7 +8,7 @@ import maths.Statistics as statistics
 import Strategy.Strategystate as state
 import Strategy.Strategy as st
 import Portfolio.Share as sh
-import Portfolio.Portfolio as pf
+import Portfolio.portfolio as pf
 import Portfolio.PfState as pfstate
 import marketquotation as mq
 
@@ -103,16 +103,16 @@ class JohannsenClassic (st.Strategy):
 
                 if spread[-1] < mu_average-constant_std*sigma: #we start the Long strategy
                     self.__backtest__.entry(time_now, investment_dict)
-                    portfolio_value = portfolio.get_TCV(time_now)
+                    portfolio_value = portfolio.get_TCV()
                     self.__state__ = state.StrategyWaitToExit()
                 if spread[-1] > mu_average+constant_std*sigma: #we start the Short strategy
                      # or -howMuchToInvestWeights ?
                     self.__backtest__.entry(time_now, investment_dict)
-                    portfolio_value = portfolio.get_TCV(time_now)
+                    portfolio_value = portfolio.get_TCV()
                     self.__state__ = state.StrategyWaitToExit()
             elif present_strategy_state == "WaitToExit":
-                old_pf_value = self.__state__.get_value()
-                portfolio_value = portfolio.get_TCV(time_now)
+                buying_value = self.__state__.get_value()
+                portfolio_value = portfolio.get_TCV()
                 if spread[-1] < mu_average-constant_std*sigma: #we exit the Short strategy
                     self.__backtest__.exit(time_now)
                     self.__state__ = state.StrategyWaitToEntry()
@@ -120,7 +120,7 @@ class JohannsenClassic (st.Strategy):
                     self.__backtest__.exit(time_now)
                     self.__state__ = state.StrategyWaitToEntry()
 
-                if portfolio_value*100/old_pf_value < 95:
+                if portfolio_value*100/buying_value < 95:
                     self.__backtest__.exit(time_now)
                     self.__state__ = state.StrategyWaitToEntry()
                     # self.__state__.setState("Nothing")
@@ -153,7 +153,7 @@ class JohannsenClassic (st.Strategy):
 
         #We create a new portfolio = 0 with the shares we will trade with
         for key in symbol_to_trade:
-            my_portfolio.add_share(sh.cryptoCurrency(key))
+            my_portfolio.add_share(sh.CryptoCurrency(key))
 
         market_quotation = mq.MarketQuotationClient().get_client().get_quotation()
         #see (1)

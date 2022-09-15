@@ -6,7 +6,7 @@ import time
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import designPattern.observer as obs
-import Portfolio.Portfolio as pf
+import Portfolio.portfolio as pf
 
 class TransactionsViewer(obs.Observer):
     def __init__(self) -> None:

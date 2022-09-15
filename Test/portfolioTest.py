@@ -1,4 +1,4 @@
-import Portfolio.Portfolio as pf
+import Portfolio.portfolio as pf
 import Portfolio.Share as sh
 
 def test_portfolio () -> None :
@@ -7,8 +7,8 @@ def test_portfolio () -> None :
     starting_money = 1000.0
     my_portfolio = pf.Portfolio(quote_currency, portfolio_name, starting_money)
 
-    share_1 = sh.cryptoCurrency("BTCUSD")
-    share_2 = sh.cryptoCurrency("ETHUSD")
+    share_1 = sh.CryptoCurrency("BTCUSD")
+    share_2 = sh.CryptoCurrency("ETHUSD")
     my_portfolio.add_share(share_1)
     my_portfolio.add_share(share_2)
     print(my_portfolio.get_number_of_shares())

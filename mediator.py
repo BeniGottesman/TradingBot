@@ -4,7 +4,7 @@ import string
 from sys import maxsize
 # from typing import List
 import Strategy.Strategy as st
-import Portfolio.Portfolio as pf
+import Portfolio.portfolio as pf
 
 #Abstract class
 #It is a mediator between Strat and portfolio

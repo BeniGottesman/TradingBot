@@ -1,4 +1,4 @@
-import Portfolio.Portfolio as pf
+import Portfolio.portfolio as pf
 import Portfolio.Share as sh
 import Strategy.JohanssenClassic as jo
 import mediator as med
@@ -38,7 +38,7 @@ def test_strategy () -> None :
 
     #We create a new portfolio = 0 with the shares we will trade with
     for key in market_quotations:
-        my_portfolio.add_share(sh.cryptoCurrency(key))
+        my_portfolio.add_share(sh.CryptoCurrency(key))
 
     #Portfolio Response test
     # print(my_portfolio.get_number_of_shares())

@@ -6,7 +6,7 @@ import datetime
 import numpy as np
 #import Portfolio.PfState as st
 import designPattern.state as st
-import Portfolio.AbstractInstrument as ai
+import Portfolio.abstractinstrument as ai
 import marketquotation as mq
 
 
@@ -44,7 +44,7 @@ class Share(ai.AbstractInstrument):
     # def isKeyExists (key: string) -> bool:
     #     pass
 
-class cryptoCurrency(Share):
+class CryptoCurrency(Share):
     def __init__(self, _name) -> None:
         _type="cryptoCurrency"
         super().__init__(_type, _name)
