@@ -78,7 +78,7 @@ class BacktestCommand(StrategyCommandPortfolio):
         shares = self.pf.get_shares()
         for key in shares.keys():
             # We release every shares
-            shares[key].setShareQuantity(0)
+            shares[key].set_share_quantity(0)
 
         #Then we update the portfolio
         self.pf.set_TCV (tmp_balance)

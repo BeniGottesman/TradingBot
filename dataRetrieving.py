@@ -95,13 +95,7 @@ def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->list[pd.Data
             market_history_df[pair].loc[(market_history_df[pair]['Open Time'] > minimum_date)]
         #for inplace=True, see (2)
         market_history_df[pair].set_index(['Open Time', 'Close Time'], inplace=True)
-
-    #We do a conversion List/Dict To Dataframe
-    #We construct with a multi-index w.r.t. Open+Close Time
-    # market_history_df = pd.DataFrame ([market_history_df])#, index=['Open Time', 'Close Time']
-    # market_history_df = pd.concat(market_history_df, axis=1)
-    # print(market_history_df['BTCUSDT'])
-    # market_history_df = market_history_df.set_index(['Open Time', 'Close Time'], inplace=True)
+        market_history_df[pair]=market_history_df[pair].interpolate()
 
     return market_history_df
 

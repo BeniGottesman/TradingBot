@@ -65,19 +65,19 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
     #######################
     ####Memento Pattern####
     @abstractmethod
-    def generateStateData(self) -> dict:
+    def generate_state_data(self) -> dict:
         pass
 
-    def save(self) -> Memento:
+    def save(self, time: datetime=datetime.date(1970, 1, 1)) -> Memento:
         """
         Saves the current state inside a memento.
         """
-        my_portfolio_state = self.generateStateData()
-        return Memento.ConcreteMemento(my_portfolio_state)
+        my_portfolio_state = self.generate_state_data()
+        return Memento.ConcreteMemento(time, my_portfolio_state)
 
 
     @abstractmethod
-    def restoreState(self, memento: Memento) -> None:
+    def restore_state(self, memento: Memento) -> None:
         """
         Restores the Originator's state from a memento object.
         """
@@ -132,14 +132,14 @@ class SeveralPortfolios(AbstractPortfolio):
 
     #######################
     ####Memento Pattern####
-    def generateStateData(self) -> dict:
+    def generate_state_data(self) -> dict:
         state_portfolios = {}
         my_portfolios = self.__portfolios__
         for portfolio in my_portfolios:
-            state_portfolios [portfolio.get_name()] = portfolio.generateStateData(portfolio)
+            state_portfolios [portfolio.get_name()] = portfolio.generate_state_data(portfolio)
         return state_portfolios
 
-    def restoreState(self, memento: Memento) -> None:
+    def restore_state(self, memento: Memento) -> None:
         """
         Restores the Originator's state from a memento object.
         """
@@ -148,7 +148,7 @@ class SeveralPortfolios(AbstractPortfolio):
         #it is a list it is preferable to browse/loop it with an index i=0..n
         for portfolio in my_portfolios:
             key = portfolio.get_name()
-            portfolio.restoreState(my_portfolios_state[key])
+            portfolio.restore_state(my_portfolios_state[key])
     ####Memento Pattern####
     #######################
 
@@ -337,7 +337,7 @@ class Portfolio(AbstractPortfolio):
 #########################################################
 ####################MEMENTO PATTERN######################
 #return a state of the portfolio
-    def generateStateData(self) -> dict: #None:
+    def generate_state_data(self) -> dict: #None:
         state_portfolios = {}
         state_portfolios ["Portfolio name"] = self.__name__
         state_portfolios ["Transaction Time"] = self.__time_last_transaction__
@@ -345,11 +345,11 @@ class Portfolio(AbstractPortfolio):
         state_portfolios ["BAL"] = self.__BAL__
         my_shares = self.__shares__
         for key, this_share in my_shares.items():
-            share_quantity = this_share.getShareQuantity()
+            share_quantity = this_share.get_share_quantity()
             state_portfolios [key] = share_quantity
         return state_portfolios
 
-    def restoreState(self, memento: Memento) -> None:
+    def restore_state(self, memento: Memento) -> None:
         """
         Restores the Originator's state from a memento object.
         """
@@ -461,6 +461,9 @@ class Portfolio(AbstractPortfolio):
             tmp_value += this_share.value(time)
         return tmp_value
 
+    def set_transaction_time (self, time) -> None:
+        self.__time_last_transaction__ = time
+
     #Update the quote value of the pairs
     #DEPRECATED
     #def updateMarketQuotation(self, time: datetime, listQuotations: dict, verbose = False) -> None:
@@ -502,9 +505,14 @@ class PortfolioCaretaker():
         self._mementos = []
         self._originator = portfolio
 
-    def backup(self) -> None:
+    def backup(self, time: datetime=datetime.date(1970, 1, 1)) -> None:
         # print("\nCaretaker: Saving Originator's state...")
-        self._mementos.append(self._originator.save())
+        self._mementos.append(self._originator.save(time))
+
+    def get_last_buying_value (self) -> float:
+        last_value = self._mementos [-1]
+        last_value = (last_value.get_state()) ["TCV"]
+        return last_value
 
     def undo(self) -> None:
         # if not len(self._mementos):
@@ -514,12 +522,11 @@ class PortfolioCaretaker():
         memento = self._mementos.pop()
         # print(f"Caretaker: Restoring state to: {memento.get_name()}")
         try:
-            self._originator.restoreState(memento)
+            self._originator.restore_state(memento)
         except Exception:
             self.undo()
 
     def show_history(self) -> None:
-        # print("Caretaker: Here's the list of mementos:")
         for memento in self._mementos:
             print(memento.get_name())
 ############MEMENTO PATTERN############
