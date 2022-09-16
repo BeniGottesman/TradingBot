@@ -101,7 +101,6 @@ def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->list[pd.Data
         market_history_df[pair].set_index(['Open Time', 'Close Time'], inplace=True)
         #This next line is for ascending=True on laptop we can see (3)
         market_history_df[pair] = market_history_df[pair].sort_index(ascending=True)
-        #.sort_values(['idx1','col1'], ascending=[True,False])
         # market_history_df[pair]=market_history_df[pair].interpolate()
 
     return market_history_df

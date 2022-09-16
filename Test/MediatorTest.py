@@ -27,6 +27,12 @@ def test_strategy () -> None :
     do_i_scrap = False #Turn to true for scrapping market datas
     symbols_scrapped = bt.scrap_datas(check_crypto_volume, parameters_scrap, do_i_scrap)
 
+    #LUNCUSDT does not exists in the database, binance url is down
+    if "LUNCUSDT" in symbols_scrapped["USDT"] :
+        symbols_scrapped["USDT"].remove("LUNCUSDT")
+# In the next version 
+# delete from the list the pairs if the url does not respond
+
     #3rd I convert them into a dataframe
     print("To dataframe")
     pairs_to_trade = symbols_scrapped[quote_currency]

@@ -126,7 +126,8 @@ class JohannsenClassic (st.Strategy):
                     self.__backtest__.exit(time_now)
                     self.__state__ = state.StrategyWaitToEntry()
 
-                if portfolio_value*100/buying_value < 95:
+                #Stop Loss at 5%
+                if portfolio_value*1./buying_value < 0.98:
                     self.__backtest__.exit(time_now)
                     self.__state__ = state.StrategyWaitToEntry()
 
@@ -192,6 +193,7 @@ class JohannsenClassic (st.Strategy):
                     market_quotation[symbol_to_trade[0]][ beginning : end ].index.get_level_values('Close Time')[-1]
 #list (market_quotation[symbol_to_trade[0]]["Close Time"][ beginning : end ])[-1]
 # list (market_quotation[symbol_to_trade[0]].iloc[market_quotation.index.get_level_values('Close Time') == 1]["Close Time"][ beginning : end ])[-1]
+            my_portfolio.update_portfolio(time_now)
             self.do_one_day (time_now, my_portfolio, portfolio_caretaker,
                             constant_std, symbol_to_trade,
                             nparray_quotations, verbose)

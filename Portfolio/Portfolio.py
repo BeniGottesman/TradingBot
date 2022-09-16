@@ -459,7 +459,7 @@ class Portfolio(AbstractPortfolio):
         my_shares = self.__shares__
         for _, this_share in my_shares.items():
             tmp_value += this_share.value(time)
-        return tmp_value
+        return self.__BAL__ + tmp_value
 
     def set_transaction_time (self, time) -> None:
         self.__time_last_transaction__ = time
