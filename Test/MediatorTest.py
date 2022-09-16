@@ -16,7 +16,7 @@ def test_strategy () -> None :
 
     # reference_pair = 'BTCUSDT'
     check_crypto_volume = {}
-    check_crypto_volume[quote_currency] = 250000000
+    check_crypto_volume[quote_currency] = 100000000
 
     #f = os.path.dirname(os.path.realpath(__file__))+"\\"
     parameters_scrap = {"folder": cst.ROOT_DIR,

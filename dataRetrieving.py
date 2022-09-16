@@ -87,15 +87,22 @@ def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->list[pd.Data
         pairs = [pairs]
     for pair in pairs:
         market_history_df[pair] = csv_pair_folder_to_dataframe (pair, trading_type, interval)
-        if minimum_date < market_history_df[pair]['Open Time'].iloc[0]:
-            minimum_date = market_history_df[pair]['Open Time'].iloc[0]
+        #Issue on laptop
+        # if minimum_date < market_history_df[pair]['Open Time'].iloc[0]:
+        #     minimum_date = market_history_df[pair]['Open Time'].iloc[0]
+        #Next line work On laptop
+        if minimum_date < market_history_df[pair]['Open Time'].iloc[-1]:
+            minimum_date = market_history_df[pair]['Open Time'].iloc[-1]
     #every arrays will start with the same date.
     for pair in pairs:
         market_history_df[pair] =\
             market_history_df[pair].loc[(market_history_df[pair]['Open Time'] > minimum_date)]
         #for inplace=True, see (2)
         market_history_df[pair].set_index(['Open Time', 'Close Time'], inplace=True)
-        market_history_df[pair]=market_history_df[pair].interpolate()
+        #This next line is for ascending=True on laptop we can see (3)
+        market_history_df[pair] = market_history_df[pair].sort_index(ascending=True)
+        #.sort_values(['idx1','col1'], ascending=[True,False])
+        # market_history_df[pair]=market_history_df[pair].interpolate()
 
     return market_history_df
 
@@ -134,3 +141,4 @@ def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->list[pd.Data
 #NEVER grow a DataFrame row-wise!
 #https://stackoverflow.com/questions/13784192/creating-an-empty-pandas-dataframe-then-filling-it
 #(2) https://stackoverflow.com/questions/24041436/set-multiindex-of-an-existing-dataframe-in-pandas
+#(3) https://stackoverflow.com/questions/28371308/sort-by-column-within-multi-index-level-in-pandas

@@ -61,6 +61,9 @@ def download_monthly_klines(trading_type, symbols, num_symbols, intervals, years
             if exists(path_to_file+'.pkl'):
               print(path_to_file,".pkl already exists")
               continue
+            if exists(path_to_file+'.csv'):
+              print(path_to_file,".csv already exists")
+              continue
             #We rewrite the path with \\ only
             path_to_zip_file = path_to_file.replace('/','\\')+".zip"
             if os.path.isfile(path_to_zip_file):
