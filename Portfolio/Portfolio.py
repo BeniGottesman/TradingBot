@@ -458,15 +458,20 @@ class Portfolio(AbstractPortfolio):
         return the TCV, by induction,
         it is preferable to updateValues before
         """
-        tmp_value = 0
+        tmp_long = 0
+        tmp_short = 0
         my_shares = self.__shares__
         for _, this_share in my_shares.items():
-            tmp_value += this_share.value(time)
+            if this_share.get_share_quantity() > 0:
+                tmp_long += this_share.value(time)
+            elif this_share.get_share_quantity() < 0:
+                tmp_short -= this_share.value(time)
             # if this_share.get_share_quantity() > 0:
             #     tmp_value += this_share.value(time)
             # else:
             #     tmp_value -= this_share.value(time)
-        return self.__BAL__ + tmp_value
+        #self.__BAL__ += tmp_short
+        return (self.__BAL__ - tmp_short) + tmp_long
 
     def set_transaction_time (self, time) -> None:
         self.__time_last_transaction__ = time

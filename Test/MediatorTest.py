@@ -52,7 +52,7 @@ def test_strategy () -> None :
     # my_portfolio.presentState()
 
     #Parameters for johanssen Strategy
-    days_rolling_window = 60
+    days_rolling_window = 30
     time_cycle_in_second = 15*60
     initial_investment_percentage = 1.
     transaction_cost = 0.0015
@@ -63,5 +63,5 @@ def test_strategy () -> None :
                             initial_investment_percentage, transaction_cost, strategy_name)
     #mediator = med.Trading (JohannsenStrat, myPF)
 
-    constant_std = 0.5
+    constant_std = 1.
     johannsen_strategy.do_algorithm(my_portfolio, constant_std, pairs_to_trade, False)

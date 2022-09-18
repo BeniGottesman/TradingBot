@@ -69,6 +69,7 @@ class BacktestCommand(StrategyCommandPortfolio):
             #     tmp_balance -= (self.pf.get_share(key).value(time))
 
         self.pf.set_BAL(tmp_balance)
+        self.pf.update_portfolio(time)
         self.pf.notify()#each time we notify we send the pf
 
     def exit(self, time: datetime, verbose = False) -> None:
@@ -78,15 +79,17 @@ class BacktestCommand(StrategyCommandPortfolio):
         if verbose:
             print("We exit the strat.")
 
-        tmp_balance = self.pf.value(time)
+        tmp_balance = 0
+        tmp_portfolio_value = self.pf.value(time)
         shares = self.pf.get_shares()
         for key in shares.keys():
             # We release every shares
             shares[key].set_share_quantity(0)
 
         #Then we update the portfolio
-        self.pf.set_TCV (tmp_balance)
-        self.pf.set_BAL (tmp_balance)
+        self.pf.set_TCV (tmp_portfolio_value)
+        self.pf.set_BAL (tmp_portfolio_value)
+        # self.pf.update_portfolio(time)
 
         #ATTENTION CHECK IF IT IS GOOD
         self.pf.set_state(pfstate.PortfolioIsReady())

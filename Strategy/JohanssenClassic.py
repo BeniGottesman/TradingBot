@@ -129,7 +129,9 @@ class JohannsenClassic (st.Strategy):
             elif present_strategy_state == "WaitToExit":
                 buying_value = portfolio_caretaker.get_last_buying_value()
                 portfolio_value = portfolio.get_TCV()
-                if portfolio_value/buying_value > 1.002+0.0015 :
+                balance = portfolio.get_BAL()
+                # if (portfolio_value-balance)/(buying_value-balance) > 1.002+0.0015 :
+                if (portfolio_value)/(buying_value) > 1.02+0.0015 :
                     if spread[-1] < mu_average-constant_std*sigma: #we exit the Short strategy
                         self.__backtest__.exit(time_now)
                         self.__state__ = state.StrategyWaitToEntry()
@@ -207,13 +209,13 @@ class JohannsenClassic (st.Strategy):
                     market_quotation[symbol_to_trade[0]][ beginning : end ].index.get_level_values('Close Time')[-1]
 #list (market_quotation[symbol_to_trade[0]]["Close Time"][ beginning : end ])[-1]
 # list (market_quotation[symbol_to_trade[0]].iloc[market_quotation.index.get_level_values('Close Time') == 1]["Close Time"][ beginning : end ])[-1]
-            my_portfolio.update_portfolio(time_now)
+            # my_portfolio.update_portfolio(time_now)
             self.do_one_day (time_now, my_portfolio, portfolio_caretaker,
                             constant_std, symbol_to_trade,
                             nparray_quotations, verbose)
 
             verbose = True
-            if verbose and i%500==0:
+            if verbose and i%100==0:
                 print("i =",i)
                 print(my_portfolio)
 
