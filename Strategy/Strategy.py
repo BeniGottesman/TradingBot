@@ -48,12 +48,13 @@ class BacktestCommand(StrategyCommandPortfolio):
             print("We entry the strat.")
 
         tmp_balance = self._portfolio.get_BAL()
-        if tmp_balance <= 0:
+        if tmp_balance < 0:
             if self.pf.getState() != "STOPPED":
                 self.pf.set_state(pfstate.PortfolioIsStopped())# PROBLEM
             print("No money in BAL = "+str(tmp_balance))
             return
 
+        # tmp = 0.
         for key, quantity in list_investments.items(): #self.pf._children
             if not self.pf.is_key_exists(key):
                 new_share = pf.Share(key, quantity)#(key, quantity, time)
@@ -62,12 +63,15 @@ class BacktestCommand(StrategyCommandPortfolio):
                 # child.addShareQuantity(time, quantity) and add to a dict
                 share = self.pf.get_share(key)
                 share.add_share_quantity(quantity)
+                #the long (+) are substracted
+                #the short (-) are added to the BAL
                 tmp_balance -= (self.pf.get_share(key).value(time))
             # if quantity < 0:
             #     tmp_balance += (self.pf.get_share(key).value(time))
             # else :
             #     tmp_balance -= (self.pf.get_share(key).value(time))
 
+        # tmp_balance = self._portfolio.get_BAL() - tmp_balance
         self.pf.set_BAL(tmp_balance)
         self.pf.update_portfolio(time)
         self.pf.notify()#each time we notify we send the pf
