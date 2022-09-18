@@ -43,7 +43,7 @@ class JohannsenClassic (st.Strategy):
         number_of_shares  = quotations.shape[1]
         log_return = np.zeros(shape=(time_serie_size, number_of_shares))
 
-        market_quotation = mq.MarketQuotationClient().get_client().get_quotation()
+        # market_quotation = mq.MarketQuotationClient().get_client().get_quotation()
 
         # First we compute the spread
         for i in range (number_of_shares):
@@ -81,7 +81,9 @@ class JohannsenClassic (st.Strategy):
             alpha=1
             if my_money>0:
                 alpha  = spread/my_money
-            how_much_to_invest_weights = spread_weights/alpha
+                how_much_to_invest_weights = spread_weights/alpha
+            else:
+                how_much_to_invest_weights = 0
             #Next line To delete ?
             how_much_to_invest_weights = how_much_to_invest_weights/number_of_shares
 
@@ -89,7 +91,7 @@ class JohannsenClassic (st.Strategy):
             sigma       = np.var (np.dot(log_return, how_much_to_invest_weights)) # Variance
             sigma       = np.sqrt(sigma)
             # The Spread or Portfolio to buy see research Spread
-            spread      = np.dot (log_return, how_much_to_invest_weights) 
+            spread      = np.dot (log_return, how_much_to_invest_weights)
 
             investment_dict={}
             quotation_dict={}
@@ -104,8 +106,8 @@ class JohannsenClassic (st.Strategy):
                 #if the last value of the mean reverting serie=spread[-1]<... then
 
                 #we start the Long strategy
-                if spread[-1] < mu_average-constant_std*sigma and\
-                    spread[-1] - spread[-2] < 0:
+                if spread[-1] < mu_average-constant_std*sigma\
+                    and spread[-1] - spread[-2] < 0:
                     key = list(investment_dict)[0]
                     investment_dict [key] = +investment_dict [key]
                     for key in list(investment_dict)[1:]:
@@ -117,8 +119,8 @@ class JohannsenClassic (st.Strategy):
                     self.__state__ = state.StrategyWaitToExit()
                     # print (self.__state__)
                  #we start the Short strategy
-                if spread[-1] > mu_average+constant_std*sigma and\
-                    spread[-1] - spread[-2] > 0:
+                if spread[-1] > mu_average+constant_std*sigma\
+                    and spread[-1] - spread[-2] > 0:
                      # or -howMuchToInvestWeights ?
                     key = list(investment_dict)[0]
                     investment_dict [key] = -abs (investment_dict [key])
@@ -136,16 +138,16 @@ class JohannsenClassic (st.Strategy):
                 balance = portfolio.get_BAL()
                 # if (portfolio_value-balance)/(buying_value-balance) > 1.002+0.0015 :
                  #we exit the Short strategy
-                if (portfolio_value)/(buying_value) > 1.00+0.0015 :
-                    if spread[-1] < mu_average-constant_std*sigma and\
-                        spread[-1] - spread[-2] > 0:
-                        self.__backtest__.exit(time_now)
-                        self.__state__ = state.StrategyWaitToEntry()
-                    #we exit the long strategy
-                    if spread[-1] > mu_average+constant_std*sigma and\
-                        spread[-1] - spread[-2] < 0:
-                        self.__backtest__.exit(time_now)
-                        self.__state__ = state.StrategyWaitToEntry()
+                # if (portfolio_value)/(buying_value) > 1.00+0.0015 :
+                if spread[-1] < mu_average-constant_std*sigma\
+                    and spread[-1] - spread[-2] > 0:
+                    self.__backtest__.exit(time_now)
+                    self.__state__ = state.StrategyWaitToEntry()
+                #we exit the long strategy
+                if spread[-1] > mu_average+constant_std*sigma\
+                    and spread[-1] - spread[-2] < 0:
+                    self.__backtest__.exit(time_now)
+                    self.__state__ = state.StrategyWaitToEntry()
 
                 #Stop Loss at 5%
                 if portfolio_value*1./buying_value < 0.95:

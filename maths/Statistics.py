@@ -96,20 +96,20 @@ def nan_helper(y: pd.DataFrame):
 def nan_helper(y: np.array):
     return np.isnan(y), lambda z: z.nonzero()[0]
 
-def log_Transform (data: pd.DataFrame):
-#    """Helper to handle indices and logical indices of NaNs.
+# def log_Transform (data: pd.DataFrame):
+# #    """Helper to handle indices and logical indices of NaNs.
 
-#    Input:
-#        - data, 1d numpy array with possible NaNs
-#    Output:
-#        - log return, 1d
-#    Example:
-#        >>> log_return = log_Transform(data [sym].close)
-#    """
-    log_return = np.log(data) - np.log(data.shift(1))
-    nans, x = nan_helper(log_return)
-    log_return[nans] = np.interp(x(nans), x(~nans), log_return[~nans])
-    return log_return
+# #    Input:
+# #        - data, 1d numpy array with possible NaNs
+# #    Output:
+# #        - log return, 1d
+# #    Example:
+# #        >>> log_return = log_Transform(data [sym].close)
+# #    """
+#     log_return = np.log(data) - np.log(data.shift(1))
+#     nans, x = nan_helper(log_return)
+#     log_return[nans] = np.interp(x(nans), x(~nans), log_return[~nans])
+#     return log_return
 
 def log_Transform (data: np.array):
     log_return = np.log(data) - np.log(shift (data,1))

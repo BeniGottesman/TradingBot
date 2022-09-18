@@ -16,7 +16,7 @@ def test_strategy () -> None :
 
     # reference_pair = 'BTCUSDT'
     check_crypto_volume = {}
-    check_crypto_volume[quote_currency] = 100000000
+    check_crypto_volume[quote_currency] = 90000000
 
     #f = os.path.dirname(os.path.realpath(__file__))+"\\"
     parameters_scrap = {"folder": cst.ROOT_DIR,
@@ -24,13 +24,13 @@ def test_strategy () -> None :
                   "trading_type": "spot", "intervals": ['15m'],
                   "startDate": "2017-01", "endDate": "2022-08",
                   "checksum": False}
-    do_i_scrap = False #Turn to true for scrapping market datas
+    do_i_scrap = True #Turn to true for scrapping market datas
     symbols_scrapped = bt.scrap_datas(check_crypto_volume, parameters_scrap, do_i_scrap)
 
     #LUNCUSDT does not exists in the database, binance url is down
     if "LUNCUSDT" in symbols_scrapped["USDT"] :
         symbols_scrapped["USDT"].remove("LUNCUSDT")
-# In the next version 
+# In the next version
 # delete from the list the pairs if the url does not respond
 
     #3rd I convert them into a dataframe
@@ -53,7 +53,7 @@ def test_strategy () -> None :
 
     #Parameters for johanssen Strategy
     days_rolling_window = 45
-    time_cycle_in_second = 15*60
+    time_cycle_in_second = 1*60
     initial_investment_percentage = 1.
     transaction_cost = 0.0015
     strategy_name = "Test Strategy"
