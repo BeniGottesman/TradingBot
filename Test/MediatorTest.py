@@ -52,9 +52,9 @@ def test_strategy () -> None :
     # my_portfolio.presentState()
 
     #Parameters for johanssen Strategy
-    days_rolling_window = 10
+    days_rolling_window = 60
     time_cycle_in_second = 15*60
-    initial_investment_percentage = 1
+    initial_investment_percentage = 1.
     transaction_cost = 0.0015
     strategy_name = "Test Strategy"
 

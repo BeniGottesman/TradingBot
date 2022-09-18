@@ -104,32 +104,46 @@ class JohannsenClassic (st.Strategy):
                 #if the last value of the mean reverting serie=spread[-1]<... then
 
                 if spread[-1] < mu_average-constant_std*sigma: #we start the Long strategy
+                    key = list(investment_dict)[0]
+                    investment_dict [key] = +investment_dict [key]
+                    for key in list(investment_dict)[1:]:
+                        investment_dict[key] = -investment_dict[key]
                     self.__backtest__.entry(time_now, investment_dict)
                     # portfolio_value = portfolio.get_TCV()
                     portfolio.set_transaction_time(time_now)
                     portfolio_caretaker.backup(time_now)
                     self.__state__ = state.StrategyWaitToExit()
+                    # print (self.__state__)
                 if spread[-1] > mu_average+constant_std*sigma: #we start the Short strategy
                      # or -howMuchToInvestWeights ?
+                    key = list(investment_dict)[0]
+                    investment_dict [key] = -investment_dict [key]
+                    # for key in list(investment_dict)[1:]:
+                    #     investment_dict[key] = +investment_dict[key]
                     self.__backtest__.entry(time_now, investment_dict)
                     # portfolio_value = portfolio.get_TCV()
                     portfolio.set_transaction_time(time_now)
                     portfolio_caretaker.backup(time_now)
                     self.__state__ = state.StrategyWaitToExit()
+                    # print (self.__state__)
             elif present_strategy_state == "WaitToExit":
                 buying_value = portfolio_caretaker.get_last_buying_value()
                 portfolio_value = portfolio.get_TCV()
-                if spread[-1] < mu_average-constant_std*sigma: #we exit the Short strategy
-                    self.__backtest__.exit(time_now)
-                    self.__state__ = state.StrategyWaitToEntry()
-                if spread[-1] > mu_average+constant_std*sigma: #we exit the long strategy
-                    self.__backtest__.exit(time_now)
-                    self.__state__ = state.StrategyWaitToEntry()
+                if portfolio_value/buying_value > 1.002+0.0015 :
+                    if spread[-1] < mu_average-constant_std*sigma: #we exit the Short strategy
+                        self.__backtest__.exit(time_now)
+                        self.__state__ = state.StrategyWaitToEntry()
+                        # print (self.__state__)
+                    if spread[-1] > mu_average+constant_std*sigma: #we exit the long strategy
+                        self.__backtest__.exit(time_now)
+                        self.__state__ = state.StrategyWaitToEntry()
+                        # print (self.__state__)
 
                 #Stop Loss at 5%
-                if portfolio_value*1./buying_value < 0.98:
+                if portfolio_value*1./buying_value < 0.95:
                     self.__backtest__.exit(time_now)
                     self.__state__ = state.StrategyWaitToEntry()
+                    # print (self.__state__)
 
             # self.__state__.setState("Nothing")
             #####Hedging : If we want to buy the spread#####

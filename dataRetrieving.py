@@ -71,6 +71,7 @@ def csv_pair_folder_to_dataframe (pair, trading_type, interval,verbose=False)->p
     return hist_df
 
 
+#add minimum time, in scrapdata
 def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->list[pd.DataFrame]:
     """
     Provide a list of pairs, then call CSVFolderToDataFrame() above, and
@@ -87,20 +88,21 @@ def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->list[pd.Data
         pairs = [pairs]
     for pair in pairs:
         market_history_df[pair] = csv_pair_folder_to_dataframe (pair, trading_type, interval)
+        #market_history_df[pair] = market_history_df[pair].sort_index(ascending=True)
         #Issue on laptop
-        # if minimum_date < market_history_df[pair]['Open Time'].iloc[0]:
-        #     minimum_date = market_history_df[pair]['Open Time'].iloc[0]
+        if minimum_date < market_history_df[pair]['Open Time'].iloc[0]:
+            minimum_date = market_history_df[pair]['Open Time'].iloc[0]
         #Next line work On laptop
-        if minimum_date < market_history_df[pair]['Open Time'].iloc[-1]:
-            minimum_date = market_history_df[pair]['Open Time'].iloc[-1]
+        # if minimum_date < market_history_df[pair]['Open Time'].iloc[-1]:
+        #     minimum_date = market_history_df[pair]['Open Time'].iloc[-1]
     #every arrays will start with the same date.
     for pair in pairs:
         market_history_df[pair] =\
             market_history_df[pair].loc[(market_history_df[pair]['Open Time'] > minimum_date)]
         #for inplace=True, see (2)
         market_history_df[pair].set_index(['Open Time', 'Close Time'], inplace=True)
+        #market_history_df[pair] = market_history_df[pair].sort_index(ascending=True)
         #This next line is for ascending=True on laptop we can see (3)
-        market_history_df[pair] = market_history_df[pair].sort_index(ascending=True)
         # market_history_df[pair]=market_history_df[pair].interpolate()
 
     return market_history_df

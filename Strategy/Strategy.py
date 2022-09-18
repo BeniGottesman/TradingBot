@@ -62,7 +62,11 @@ class BacktestCommand(StrategyCommandPortfolio):
                 # child.addShareQuantity(time, quantity) and add to a dict
                 share = self.pf.get_share(key)
                 share.add_share_quantity(quantity)
-            tmp_balance -= self.pf.get_share(key).value(time)
+                tmp_balance -= (self.pf.get_share(key).value(time))
+            # if quantity < 0:
+            #     tmp_balance += (self.pf.get_share(key).value(time))
+            # else :
+            #     tmp_balance -= (self.pf.get_share(key).value(time))
 
         self.pf.set_BAL(tmp_balance)
         self.pf.notify()#each time we notify we send the pf

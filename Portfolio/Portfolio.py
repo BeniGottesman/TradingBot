@@ -439,16 +439,19 @@ class Portfolio(AbstractPortfolio):
 
 ####################################
 ##########Portfolio Update##########
+    #Update the TCV
     def update_portfolio(self, time: datetime=datetime.date(1970, 1, 1))-> None:
         """
         Update the portfolio
         """
         tmp = self.value (time)
         #UPDATE Step
+        self.__time_last_transaction__ = time
         self.__TCV__ = tmp
         # self.__BAL__ = tmp
 ##########Portfolio Update##########
 ####################################
+
 
     def value(self, time: datetime=datetime.date(1970, 1, 1)) -> float:
         """
@@ -459,6 +462,10 @@ class Portfolio(AbstractPortfolio):
         my_shares = self.__shares__
         for _, this_share in my_shares.items():
             tmp_value += this_share.value(time)
+            # if this_share.get_share_quantity() > 0:
+            #     tmp_value += this_share.value(time)
+            # else:
+            #     tmp_value -= this_share.value(time)
         return self.__BAL__ + tmp_value
 
     def set_transaction_time (self, time) -> None:
