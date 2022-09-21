@@ -69,9 +69,13 @@ class CryptoCurrency(Share):
         ####Enhanced this part####
         tmp_df = market_quotation[_share_name]
         tmp_df_closetime = tmp_df.index.get_level_values('Close Time')
-        tmp_df = tmp_df.iloc[tmp_df_closetime == time]
         #see (2) about iloc
-        _quote_current_value = tmp_df["Close"].iloc[0]
+        if (tmp_df_closetime == time).any() : #greedy
+            tmp_df = tmp_df.iloc[tmp_df_closetime == time] #greedy X2
+            _quote_current_value = tmp_df["Close"].iloc[0]
+        else:
+            d = min(tmp_df_closetime, key=lambda _d: abs(_d - time))
+            _quote_current_value = tmp_df[tmp_df_closetime==d]['Close'].iloc[0]
 
         return _quote_current_value * self.__number_of_shares__
 

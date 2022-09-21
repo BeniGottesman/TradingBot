@@ -39,11 +39,17 @@ def csv_to_dataframe (file)->pd.DataFrame:
     #As dates are returned from Binance as timestamps,
     #we first divide by 1000 and then set the units to seconds to convert correctly.
     hist_df['Open Time'] = pd.to_datetime(hist_df['Open Time']/1000, unit='s')
+    #To delete the millisecond
+    hist_df['Open Time'] = pd.to_datetime(hist_df['Open Time']).dt.floor('S')
     hist_df['Close Time'] = pd.to_datetime(hist_df['Close Time']/1000, unit='s')
+    hist_df['Close Time'] = pd.to_datetime(hist_df['Close Time']).dt.floor('S')
     numeric_columns = ['Open', 'High', 'Low', 'Close', 'Volume',
                        'Quote Asset Volume', 'TB Base Volume', 'TB Quote Volume']
     #We convert our objects into numerical values using the to_numeric function.
     hist_df[numeric_columns] = hist_df[numeric_columns].apply(pd.to_numeric, axis=1)
+
+    hist_df.set_index(['Open Time', 'Close Time'], inplace=True)
+
     hist_df.to_pickle(filepkl)
     os.remove(file)
 
@@ -58,14 +64,25 @@ def csv_pair_folder_to_dataframe (pair, trading_type, interval,verbose=False)->p
     relative_path = "data\\"+trading_type+"\\monthly\\klines\\"+pair+"\\"+interval+"\\"
 
     #We now merge
-    frames = []
+    tmp_frames = {}
+    tmp_int_dates = []
     for file in os.listdir(relative_path):
+        tmp_date = file
+        tmp_date = tmp_date.replace(pair,'').replace(interval,'')\
+            .replace('.pkl','').replace('.csv','').replace('-','')
+        tmp_int_dates.append (int(tmp_date))
         if file.endswith(".csv"):
             if verbose:
                 print ("merge = ", file)
-            frames.append (csv_to_dataframe(relative_path+file))
+            tmp_frames[int(tmp_date)]= (csv_to_dataframe(relative_path+file))
         elif file.endswith(".pkl"):
-            frames.append (pd.read_pickle(relative_path+file))
+            tmp_frames[int(tmp_date)]= (pd.read_pickle(relative_path+file))
+
+    tmp_int_dates.sort()
+    frames = []
+    for d in tmp_int_dates:
+        frames.append(tmp_frames[d])
+
     hist_df = pd.concat(frames)
 
     return hist_df
@@ -90,17 +107,18 @@ def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->list[pd.Data
         market_history_df[pair] = csv_pair_folder_to_dataframe (pair, trading_type, interval)
         #market_history_df[pair] = market_history_df[pair].sort_index(ascending=True)
         #Issue on laptop
-        if minimum_date < market_history_df[pair]['Open Time'].iloc[0]:
-            minimum_date = market_history_df[pair]['Open Time'].iloc[0]
+        if minimum_date < market_history_df[pair].index.get_level_values('Close Time')[0]:
+            minimum_date = market_history_df[pair].index.get_level_values('Close Time')[0]
         #Next line work On laptop
         # if minimum_date < market_history_df[pair]['Open Time'].iloc[-1]:
         #     minimum_date = market_history_df[pair]['Open Time'].iloc[-1]
     #every arrays will start with the same date.
     for pair in pairs:
         market_history_df[pair] =\
-            market_history_df[pair].loc[(market_history_df[pair]['Open Time'] > minimum_date)]
+            market_history_df[pair]\
+                .loc[(market_history_df[pair].index.get_level_values('Close Time') > minimum_date)]
         #for inplace=True, see (2)
-        market_history_df[pair].set_index(['Open Time', 'Close Time'], inplace=True)
+        # market_history_df[pair].set_index(['Open Time', 'Close Time'], inplace=True)
         #market_history_df[pair] = market_history_df[pair].sort_index(ascending=True)
         #This next line is for ascending=True on laptop we can see (3)
         # market_history_df[pair] = market_history_df[pair].interpolate(method='linear', limit_direction='forward', axis=0)

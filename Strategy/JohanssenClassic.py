@@ -1,8 +1,7 @@
 import datetime
 import sys
-# from typing import List
 import numpy as np
-# import pandas as pd
+import matplotlib.pyplot as plt
 
 import maths.Statistics as statistics
 import Strategy.Strategystate as state
@@ -31,13 +30,14 @@ class JohannsenClassic (st.Strategy):
         #i.e. 0.2% of the capital for instance
         self.__initial_investment_percentage__ = _initial_investment_percentage
         self.__state__ = state.StrategyWaitToEntry()
+        self.__short_strategy__ = False
 
 
     # c=0.75 -> mu +/- 0.75xsigma
     # quotation = value of the different money now
     def do_one_day (self, time_now: datetime,
                     portfolio: pf.Portfolio, portfolio_caretaker: pf.PortfolioCaretaker,
-                    constant_std: float, moneys: list, quotations: np.array, 
+                    constant_std: float, moneys: list, quotations: np.array,
                     verbose = False) -> None:
         time_serie_size   = quotations.shape[0]
         number_of_shares  = quotations.shape[1]
@@ -70,7 +70,7 @@ class JohannsenClassic (st.Strategy):
 
         # Once I obtain the spread
         # I check the state of the pf
-        error = 0.5
+        # error = 0.5
         #the state of the strategy
         present_strategy_state = self.__state__.get_state() #string overload
         my_money = portfolio.get_BAL ()# Amount of money I  actually hold in my pf
@@ -93,6 +93,11 @@ class JohannsenClassic (st.Strategy):
             # The Spread or Portfolio to buy see research Spread
             spread      = np.dot (log_return, how_much_to_invest_weights)
 
+            # plt.plot(spread[-30:])
+            # plt.plot((mu_average-constant_std*sigma)*np.ones(30))
+            # plt.plot((mu_average+constant_std*sigma)*np.ones(30))
+            # plt.show()
+
             investment_dict={}
             quotation_dict={}
             i=0
@@ -106,8 +111,8 @@ class JohannsenClassic (st.Strategy):
                 #if the last value of the mean reverting serie=spread[-1]<... then
 
                 #we start the Long strategy
-                if spread[-1] < mu_average-constant_std*sigma\
-                    and spread[-1] - spread[-2] < 0:
+                if spread[-1] < mu_average-constant_std*sigma:
+                    # if spread[-1] - spread[-2] > 0:
                     key = list(investment_dict)[0]
                     investment_dict [key] = +investment_dict [key]
                     for key in list(investment_dict)[1:]:
@@ -117,10 +122,11 @@ class JohannsenClassic (st.Strategy):
                     portfolio.set_transaction_time(time_now)
                     portfolio_caretaker.backup(time_now)
                     self.__state__ = state.StrategyWaitToExit()
+                    self.__short_strategy__ = False
                     # print (self.__state__)
                  #we start the Short strategy
-                if spread[-1] > mu_average+constant_std*sigma\
-                    and spread[-1] - spread[-2] > 0:
+                if spread[-1] > mu_average+constant_std*sigma:
+                    # if spread[-1] - spread[-2] < 0:
                      # or -howMuchToInvestWeights ?
                     key = list(investment_dict)[0]
                     investment_dict [key] = -abs (investment_dict [key])
@@ -131,6 +137,7 @@ class JohannsenClassic (st.Strategy):
                     portfolio.set_transaction_time(time_now)
                     portfolio_caretaker.backup(time_now)
                     self.__state__ = state.StrategyWaitToExit()
+                    self.__short_strategy__ = True
                     # print (self.__state__)
             elif present_strategy_state == "WaitToExit":
                 buying_value = portfolio_caretaker.get_last_buying_value()
@@ -138,19 +145,21 @@ class JohannsenClassic (st.Strategy):
                 balance = portfolio.get_BAL()
                 # if (portfolio_value-balance)/(buying_value-balance) > 1.002+0.0015 :
                  #we exit the Short strategy
-                # if (portfolio_value)/(buying_value) > 1.00+0.0015 :
-                if spread[-1] < mu_average-constant_std*sigma\
-                    and spread[-1] - spread[-2] > 0:
-                    self.__backtest__.exit(time_now)
-                    self.__state__ = state.StrategyWaitToEntry()
-                #we exit the long strategy
-                if spread[-1] > mu_average+constant_std*sigma\
-                    and spread[-1] - spread[-2] < 0:
-                    self.__backtest__.exit(time_now)
-                    self.__state__ = state.StrategyWaitToEntry()
+                if (portfolio_value)/(buying_value) > 1.005+0.0015 :
+                    if spread[-1] < mu_average-constant_std*sigma and self.__short_strategy__:
+                        # if spread[-1] - spread[-2] < 0:
+                        self.__backtest__.exit(time_now)
+                        self.__state__ = state.StrategyWaitToEntry()
+                        self.__short_strategy__ = False
+                    #we exit the long strategy
+                    if spread[-1] > mu_average+constant_std*sigma and not self.__short_strategy__:
+                        # if spread[-1] - spread[-2] > 0:
+                        self.__backtest__.exit(time_now)
+                        self.__state__ = state.StrategyWaitToEntry()
+                        self.__short_strategy__ = False
 
                 #Stop Loss at 5%
-                if portfolio_value*1./buying_value < 0.95:
+                if portfolio_value*1./buying_value < 0.90:
                     self.__backtest__.exit(time_now)
                     self.__state__ = state.StrategyWaitToEntry()
                     print ("STOP LOSS")
@@ -214,16 +223,15 @@ class JohannsenClassic (st.Strategy):
                 j+=1
             #index.get_level_values, see (2): Selecting from multi-index pandas
             time_now =\
-                    market_quotation[symbol_to_trade[0]][ beginning : end ].index.get_level_values('Close Time')[-1]
-#list (market_quotation[symbol_to_trade[0]]["Close Time"][ beginning : end ])[-1]
-# list (market_quotation[symbol_to_trade[0]].iloc[market_quotation.index.get_level_values('Close Time') == 1]["Close Time"][ beginning : end ])[-1]
+                market_quotation[symbol_to_trade[0]][ beginning : end ]\
+                                .index.get_level_values('Close Time')[-1]
             my_portfolio.update_portfolio(time_now)
             self.do_one_day (time_now, my_portfolio, portfolio_caretaker,
                             constant_std, symbol_to_trade,
                             nparray_quotations, verbose)
 
             verbose = True
-            if verbose and i%100==0:
+            if verbose and i%1000==0:
                 print("i =",i)
                 print(my_portfolio)
 

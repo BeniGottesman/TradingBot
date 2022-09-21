@@ -16,15 +16,15 @@ def test_strategy () -> None :
 
     # reference_pair = 'BTCUSDT'
     check_crypto_volume = {}
-    check_crypto_volume[quote_currency] = 90000000
+    check_crypto_volume[quote_currency] = 50000000
 
     #f = os.path.dirname(os.path.realpath(__file__))+"\\"
     parameters_scrap = {"folder": cst.ROOT_DIR,
                   "years": cst.YEARS, "months": [1,2,3,4,5,6,7,8,9,10,11,12],
                   "trading_type": "spot", "intervals": ['15m'],
-                  "startDate": "2017-01", "endDate": "2022-08",
+                  "startDate": "2021-01", "endDate": "2022-08",
                   "checksum": False}
-    do_i_scrap = True #Turn to true for scrapping market datas
+    do_i_scrap = False#False #Turn to true for scrapping market datas
     symbols_scrapped = bt.scrap_datas(check_crypto_volume, parameters_scrap, do_i_scrap)
 
     #LUNCUSDT does not exists in the database, binance url is down
@@ -52,8 +52,8 @@ def test_strategy () -> None :
     # my_portfolio.presentState()
 
     #Parameters for johanssen Strategy
-    days_rolling_window = 45
-    time_cycle_in_second = 1*60
+    days_rolling_window = 50
+    time_cycle_in_second = 15*60
     initial_investment_percentage = 1.
     transaction_cost = 0.0015
     strategy_name = "Test Strategy"
@@ -63,5 +63,5 @@ def test_strategy () -> None :
                             initial_investment_percentage, transaction_cost, strategy_name)
     #mediator = med.Trading (JohannsenStrat, myPF)
 
-    constant_std = 1.
+    constant_std = 0.25
     johannsen_strategy.do_algorithm(my_portfolio, constant_std, pairs_to_trade, False)
