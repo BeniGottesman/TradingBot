@@ -83,9 +83,25 @@ class JohannsenClassic (st.Strategy):
                 alpha  = spread/my_money
                 how_much_to_invest_weights = spread_weights/alpha
             else:
-                how_much_to_invest_weights = 0
+                how_much_to_invest_weights = np.array ([0 for key in moneys])
             #Next line To delete ?
             how_much_to_invest_weights = how_much_to_invest_weights/number_of_shares
+
+            investment_dict={}
+            # quotation_dict={}
+
+            # i=0
+            # for key, value in zip(moneys, how_much_to_invest_weights):
+            #     if i > 0:
+            #         # how_much_to_invest_weights [i] = -how_much_to_invest_weights [i]
+            #         investment_dict[key] = -value #WARNING
+            #     else:
+            #         investment_dict[key] = +value #WARNING
+            #     # quotation_dict[key] = quotations[-1,i]#USELESS ?
+            #     i+=1
+
+            for key, value in zip(moneys, how_much_to_invest_weights):
+                investment_dict[key] = value #WARNING
 
             mu_average  = np.mean (np.dot(log_return, how_much_to_invest_weights)) # Mean
             sigma       = np.var (np.dot(log_return, how_much_to_invest_weights)) # Variance
@@ -93,19 +109,11 @@ class JohannsenClassic (st.Strategy):
             # The Spread or Portfolio to buy see research Spread
             spread      = np.dot (log_return, how_much_to_invest_weights)
 
+
             # plt.plot(spread[-30:])
             # plt.plot((mu_average-constant_std*sigma)*np.ones(30))
             # plt.plot((mu_average+constant_std*sigma)*np.ones(30))
             # plt.show()
-
-            investment_dict={}
-            quotation_dict={}
-            i=0
-            for key, value in zip(moneys, how_much_to_invest_weights):
-                investment_dict[key] = value
-                quotation_dict[key] = quotations[-1,i]
-                i+=1
-            #  portfolio.updateMarketQuotation(time_now, quotation_dict)
 
             if present_strategy_state == "WaitToEntry":
                 #if the last value of the mean reverting serie=spread[-1]<... then
@@ -113,10 +121,10 @@ class JohannsenClassic (st.Strategy):
                 #we start the Long strategy
                 if spread[-1] < mu_average-constant_std*sigma:
                     # if spread[-1] - spread[-2] > 0:
-                    key = list(investment_dict)[0]
-                    investment_dict [key] = +investment_dict [key]
-                    for key in list(investment_dict)[1:]:
-                        investment_dict[key] = -investment_dict[key]
+                    # key = list(investment_dict)[0]
+                    # investment_dict [key] = +investment_dict [key]
+                    # for key in list(investment_dict)[1:]:
+                    #     investment_dict[key] = -investment_dict[key]
                     self.__backtest__.entry(time_now, investment_dict)
                     # portfolio_value = portfolio.get_TCV()
                     portfolio.set_transaction_time(time_now)
@@ -127,11 +135,12 @@ class JohannsenClassic (st.Strategy):
                  #we start the Short strategy
                 if spread[-1] > mu_average+constant_std*sigma:
                     # if spread[-1] - spread[-2] < 0:
-                     # or -howMuchToInvestWeights ?
-                    key = list(investment_dict)[0]
-                    investment_dict [key] = -abs (investment_dict [key])
+                    ######Short = inverse the spread#####
+                    # key = list(investment_dict)[0]
+                    # investment_dict [key] = -abs (investment_dict [key])
                     # for key in list(investment_dict)[1:]:
                     #     investment_dict[key] = +investment_dict[key]
+                    ######Short = inverse the spread#####
                     self.__backtest__.entry(time_now, investment_dict)
                     # portfolio_value = portfolio.get_TCV()
                     portfolio.set_transaction_time(time_now)
@@ -145,7 +154,7 @@ class JohannsenClassic (st.Strategy):
                 balance = portfolio.get_BAL()
                 # if (portfolio_value-balance)/(buying_value-balance) > 1.002+0.0015 :
                  #we exit the Short strategy
-                if (portfolio_value)/(buying_value) > 1.005+0.0015 :
+                if (portfolio_value)/(buying_value) > 1.01+0.0015 :
                     if spread[-1] < mu_average-constant_std*sigma and self.__short_strategy__:
                         # if spread[-1] - spread[-2] < 0:
                         self.__backtest__.exit(time_now)
