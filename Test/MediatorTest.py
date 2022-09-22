@@ -22,7 +22,7 @@ def test_strategy () -> None :
     parameters_scrap = {"folder": cst.ROOT_DIR,
                    "years": cst.YEARS, "months": [1,2,3,4,5,6,7,8,9,10,11,12],
                    "trading_type": "spot", "intervals": ['15m'],
-                   "startDate": "2020-01", "endDate": "2022-08",
+                   "startDate": "2019-01", "endDate": "2022-08",
                    "checksum": False}
     do_i_scrap = False#False #Turn to true for scrapping market datas
     # symbols_scrapped = bt.scrap_datas(check_crypto_volume, parameters_scrap, do_i_scrap)
@@ -36,7 +36,7 @@ def test_strategy () -> None :
 
     #Another version with my selected pairs
     pairs_to_trade= {}
-    pairs_to_trade [quote_currency] = ["BTCUSDT", "LTCUSDT", "BCHUSDT", "SOLUSDT"]
+    pairs_to_trade [quote_currency] = ["BTCUSDT", "ETHUSDT", "LTCUSDT", "BCHUSDT", "SOLUSDT"]
     parameters_scrap["symbols"]=pairs_to_trade
     dr.retrieve_historic_from_binance_datas (parameters_scrap)
     #Another version with my selected pairs
@@ -61,7 +61,7 @@ def test_strategy () -> None :
     # my_portfolio.presentState()
 
     #Parameters for johanssen Strategy
-    days_rolling_window = 50
+    days_rolling_window = 300
     time_cycle_in_second = 15*60
     initial_investment_percentage = 1.
     transaction_cost = 0.0015

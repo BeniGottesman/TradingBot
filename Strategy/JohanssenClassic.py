@@ -213,6 +213,9 @@ class JohannsenClassic (st.Strategy):
             beginning = i
             end = self.__rollingwindow__ + i
             if end >= number_of_quotations_periods:
+                print(my_portfolio)
+                plt.plot(TCV)
+                plt.show()
                 break
             my_shares = my_portfolio.get_shares()
             j=0
@@ -233,7 +236,7 @@ class JohannsenClassic (st.Strategy):
             TCV.append (my_portfolio.get_TCV())
 
             verbose = True
-            if verbose and i%3000==0:
+            if verbose and i%10000==0:
                 print("i =",i)
                 print(my_portfolio)
                 plt.plot(TCV)
