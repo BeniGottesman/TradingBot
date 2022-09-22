@@ -121,7 +121,8 @@ def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->list[pd.Data
         # market_history_df[pair].set_index(['Open Time', 'Close Time'], inplace=True)
         #market_history_df[pair] = market_history_df[pair].sort_index(ascending=True)
         #This next line is for ascending=True on laptop we can see (3)
-        # market_history_df[pair] = market_history_df[pair].interpolate(method='linear', limit_direction='forward', axis=0)
+        # market_history_df[pair] =
+        # market_history_df[pair].interpolate(method='linear', limit_direction='forward', axis=0)
 
     return market_history_df
 

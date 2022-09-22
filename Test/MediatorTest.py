@@ -15,27 +15,36 @@ def test_strategy () -> None :
     my_portfolio = pf.Portfolio(quote_currency, portfolio_name, starting_money)
 
     # reference_pair = 'BTCUSDT'
-    check_crypto_volume = {}
-    check_crypto_volume[quote_currency] = 100000000
+    # Scrap w.r.t. the volume
+    # check_crypto_volume = {}
+    # check_crypto_volume[quote_currency] = 7500000000
 
-    #f = os.path.dirname(os.path.realpath(__file__))+"\\"
     parameters_scrap = {"folder": cst.ROOT_DIR,
-                  "years": cst.YEARS, "months": [1,2,3,4,5,6,7,8,9,10,11,12],
-                  "trading_type": "spot", "intervals": ['15m'],
-                  "startDate": "2021-01", "endDate": "2022-08",
-                  "checksum": False}
+                   "years": cst.YEARS, "months": [1,2,3,4,5,6,7,8,9,10,11,12],
+                   "trading_type": "spot", "intervals": ['15m'],
+                   "startDate": "2020-01", "endDate": "2022-08",
+                   "checksum": False}
     do_i_scrap = False#False #Turn to true for scrapping market datas
-    symbols_scrapped = bt.scrap_datas(check_crypto_volume, parameters_scrap, do_i_scrap)
+    # symbols_scrapped = bt.scrap_datas(check_crypto_volume, parameters_scrap, do_i_scrap)
+    #Scrap w.r.t. the volume
 
     #LUNCUSDT does not exists in the database, binance url is down
-    if "LUNCUSDT" in symbols_scrapped["USDT"] :
-        symbols_scrapped["USDT"].remove("LUNCUSDT")
-# In the next version
-# delete from the list the pairs if the url does not respond
+    # if "LUNCUSDT" in symbols_scrapped["USDT"] :
+    #     symbols_scrapped["USDT"].remove("LUNCUSDT")
+    # In the next version
+    # delete from the list the pairs if the url does not respond
+
+    #Another version with my selected pairs
+    pairs_to_trade= {}
+    pairs_to_trade [quote_currency] = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "LTCUSDT"]
+    parameters_scrap["symbols"]=pairs_to_trade
+    dr.retrieve_historic_from_binance_datas (parameters_scrap)
+    #Another version with my selected pairs
 
     #3rd I convert them into a dataframe
     print("To dataframe")
-    pairs_to_trade = symbols_scrapped[quote_currency]
+    # pairs_to_trade = symbols_scrapped[quote_currency]
+    pairs_to_trade = pairs_to_trade[quote_currency]
     market_quotations = dr.csv_to_dataframe_of_many_pairs(pairs_to_trade, 'spot', '15m')
     #We initialize the market quotation client
     mq.MarketQuotationClient (market_quotations)
@@ -63,5 +72,5 @@ def test_strategy () -> None :
                             initial_investment_percentage, transaction_cost, strategy_name)
     #mediator = med.Trading (JohannsenStrat, myPF)
 
-    constant_std = 0.5
+    constant_std = 1.0
     johannsen_strategy.do_algorithm(my_portfolio, constant_std, pairs_to_trade, False)

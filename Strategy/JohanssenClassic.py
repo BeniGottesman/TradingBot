@@ -73,7 +73,7 @@ class JohannsenClassic (st.Strategy):
         # error = 0.5
         #the state of the strategy
         present_strategy_state = self.__state__.get_state() #string overload
-        my_money = portfolio.get_BAL ()# Amount of money I  actually hold in my pf
+        my_money = portfolio.get_BAL ()# Amount of money in USDT I  actually hold in my pf
 
         pf_state = portfolio.getState()
         if pf_state == "READY": #or # if pfState == pfstate.PortfolioIsReady():
@@ -82,22 +82,19 @@ class JohannsenClassic (st.Strategy):
             if my_money>0:
                 alpha  = spread/my_money
                 how_much_to_invest_weights = spread_weights/alpha
+                how_much_to_invest_weights = how_much_to_invest_weights/number_of_shares
             else:
                 how_much_to_invest_weights = np.array ([0 for key in moneys])
-            #Next line To delete ?
-            how_much_to_invest_weights = how_much_to_invest_weights/number_of_shares
 
             investment_dict={}
-            # quotation_dict={}
 
             # i=0
             # for key, value in zip(moneys, how_much_to_invest_weights):
             #     if i > 0:
             #         # how_much_to_invest_weights [i] = -how_much_to_invest_weights [i]
-            #         investment_dict[key] = -value #WARNING
+            #         investment_dict[key] = - value #WARNING
             #     else:
-            #         investment_dict[key] = +value #WARNING
-            #     # quotation_dict[key] = quotations[-1,i]#USELESS ?
+            #         investment_dict[key] = + value #WARNING
             #     i+=1
 
             for key, value in zip(moneys, how_much_to_invest_weights):
@@ -115,44 +112,41 @@ class JohannsenClassic (st.Strategy):
             # plt.plot((mu_average+constant_std*sigma)*np.ones(30))
             # plt.show()
 
+            stop_loss_activated = False
             if present_strategy_state == "WaitToEntry":
                 #if the last value of the mean reverting serie=spread[-1]<... then
 
                 #we start the Long strategy
                 if spread[-1] < mu_average-constant_std*sigma:
-                    # if spread[-1] - spread[-2] > 0:
+                    if spread[-1] - spread[-2] > 0:
                     # key = list(investment_dict)[0]
                     # investment_dict [key] = +investment_dict [key]
                     # for key in list(investment_dict)[1:]:
                     #     investment_dict[key] = -investment_dict[key]
-                    self.__backtest__.entry(time_now, investment_dict)
-                    # portfolio_value = portfolio.get_TCV()
-                    portfolio.set_transaction_time(time_now)
-                    portfolio_caretaker.backup(time_now)
-                    self.__state__ = state.StrategyWaitToExit()
-                    self.__short_strategy__ = False
-                    # print (self.__state__)
+                        self.__backtest__.entry(time_now, investment_dict)
+                        portfolio.set_transaction_time(time_now)
+                        portfolio_caretaker.backup(time_now)
+                        self.__state__ = state.StrategyWaitToExit()
                  #we start the Short strategy
                 if spread[-1] > mu_average+constant_std*sigma:
-                    # if spread[-1] - spread[-2] < 0:
+                    if spread[-1] - spread[-2] < 0:
                     ######Short = inverse the spread#####
-                    # key = list(investment_dict)[0]
-                    # investment_dict [key] = -abs (investment_dict [key])
-                    # for key in list(investment_dict)[1:]:
-                    #     investment_dict[key] = +investment_dict[key]
+                        key = list(investment_dict)[0]
+                        investment_dict [key] = - (investment_dict [key])
+                        for key in list(investment_dict)[1:]:
+                            investment_dict[key] = - (investment_dict [key])
                     ######Short = inverse the spread#####
-                    self.__backtest__.entry(time_now, investment_dict)
-                    # portfolio_value = portfolio.get_TCV()
-                    portfolio.set_transaction_time(time_now)
-                    portfolio_caretaker.backup(time_now)
-                    self.__state__ = state.StrategyWaitToExit()
-                    self.__short_strategy__ = True
-                    # print (self.__state__)
+                        self.__backtest__.entry(time_now, investment_dict)
+                        # portfolio_value = portfolio.get_TCV()
+                        portfolio.set_transaction_time(time_now)
+                        portfolio_caretaker.backup(time_now)
+                        self.__state__ = state.StrategyWaitToExit()
+                        self.__short_strategy__ = True
             elif present_strategy_state == "WaitToExit":
                 buying_value = portfolio_caretaker.get_last_buying_value()
                 portfolio_value = portfolio.get_TCV()
-                balance = portfolio.get_BAL()
-                # if (portfolio_value-balance)/(buying_value-balance) > 1.002+0.0015 :
+                # balance = portfolio.get_BAL()
+                # # if (portfolio_value-balance)/(buying_value-balance) > 1.002+0.0015 :
                  #we exit the Short strategy
                 if (portfolio_value)/(buying_value) > 1.01+0.0015 :
                     if spread[-1] < mu_average-constant_std*sigma and self.__short_strategy__:
@@ -165,10 +159,9 @@ class JohannsenClassic (st.Strategy):
                         # if spread[-1] - spread[-2] > 0:
                         self.__backtest__.exit(time_now)
                         self.__state__ = state.StrategyWaitToEntry()
-                        self.__short_strategy__ = False
 
                 #Stop Loss at 5%
-                if portfolio_value*1./buying_value < 0.90:
+                if portfolio_value*1./buying_value < 0.90 and stop_loss_activated:
                     self.__backtest__.exit(time_now)
                     self.__state__ = state.StrategyWaitToEntry()
                     print ("STOP LOSS")
