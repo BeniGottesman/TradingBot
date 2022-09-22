@@ -36,7 +36,7 @@ def test_strategy () -> None :
 
     #Another version with my selected pairs
     pairs_to_trade= {}
-    pairs_to_trade [quote_currency] = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "LTCUSDT"]
+    pairs_to_trade [quote_currency] = ["BTCUSDT", "LTCUSDT", "BCHUSDT", "SOLUSDT"]
     parameters_scrap["symbols"]=pairs_to_trade
     dr.retrieve_historic_from_binance_datas (parameters_scrap)
     #Another version with my selected pairs

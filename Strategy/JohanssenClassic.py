@@ -77,14 +77,13 @@ class JohannsenClassic (st.Strategy):
 
         pf_state = portfolio.getState()
         if pf_state == "READY": #or # if pfState == pfstate.PortfolioIsReady():
-            spread = spread_weights * quotations[time_serie_size-1,:] #= value
             alpha=1
             if my_money>0:
-                alpha  = spread/my_money
+                alpha  = (spread_weights * quotations[time_serie_size-1,:]) / my_money
                 how_much_to_invest_weights = spread_weights/alpha
                 how_much_to_invest_weights = how_much_to_invest_weights/number_of_shares
             else:
-                how_much_to_invest_weights = np.array ([0 for key in moneys])
+                how_much_to_invest_weights = np.array ([-1000 for key in moneys])
 
             investment_dict={}
 
@@ -100,25 +99,24 @@ class JohannsenClassic (st.Strategy):
             for key, value in zip(moneys, how_much_to_invest_weights):
                 investment_dict[key] = value #WARNING
 
-            mu_average  = np.mean (np.dot(log_return, how_much_to_invest_weights)) # Mean
-            sigma       = np.var (np.dot(log_return, how_much_to_invest_weights)) # Variance
+            mu_average  = np.mean (np.dot(log_return, spread_weights)) # Mean
+            sigma       = np.var (np.dot(log_return, spread_weights)) # Variance
             sigma       = np.sqrt(sigma)
             # The Spread or Portfolio to buy see research Spread
-            spread      = np.dot (log_return, how_much_to_invest_weights)
-
+            spread      = np.dot (log_return, spread_weights)
 
             # plt.plot(spread[-30:])
             # plt.plot((mu_average-constant_std*sigma)*np.ones(30))
             # plt.plot((mu_average+constant_std*sigma)*np.ones(30))
             # plt.show()
 
-            stop_loss_activated = False
+            stop_loss_activated = True
             if present_strategy_state == "WaitToEntry":
                 #if the last value of the mean reverting serie=spread[-1]<... then
 
                 #we start the Long strategy
                 if spread[-1] < mu_average-constant_std*sigma:
-                    if spread[-1] - spread[-2] > 0:
+                    # if spread[-1] - spread[-2] > 0:
                     # key = list(investment_dict)[0]
                     # investment_dict [key] = +investment_dict [key]
                     # for key in list(investment_dict)[1:]:
@@ -129,7 +127,7 @@ class JohannsenClassic (st.Strategy):
                         self.__state__ = state.StrategyWaitToExit()
                  #we start the Short strategy
                 if spread[-1] > mu_average+constant_std*sigma:
-                    if spread[-1] - spread[-2] < 0:
+                    # if spread[-1] - spread[-2] < 0:
                     ######Short = inverse the spread#####
                         key = list(investment_dict)[0]
                         investment_dict [key] = - (investment_dict [key])
@@ -148,7 +146,7 @@ class JohannsenClassic (st.Strategy):
                 # balance = portfolio.get_BAL()
                 # # if (portfolio_value-balance)/(buying_value-balance) > 1.002+0.0015 :
                  #we exit the Short strategy
-                if (portfolio_value)/(buying_value) > 1.01+0.0015 :
+                if (portfolio_value)/(buying_value) > 1.05+0.0015 :
                     if spread[-1] < mu_average-constant_std*sigma and self.__short_strategy__:
                         # if spread[-1] - spread[-2] < 0:
                         self.__backtest__.exit(time_now)
@@ -164,7 +162,7 @@ class JohannsenClassic (st.Strategy):
                 if portfolio_value*1./buying_value < 0.90 and stop_loss_activated:
                     self.__backtest__.exit(time_now)
                     self.__state__ = state.StrategyWaitToEntry()
-                    print ("STOP LOSS")
+                    print ("STOP LOSS = ",time_now)
 
             # self.__state__.setState("Nothing")
             #####Hedging : If we want to buy the spread#####
@@ -210,6 +208,7 @@ class JohannsenClassic (st.Strategy):
         number_of_shares = my_portfolio.get_number_of_shares()
         nparray_quotations = np.zeros(shape=(self.__rollingwindow__, number_of_shares))
         i=0
+        TCV = []
         while True:
             beginning = i
             end = self.__rollingwindow__ + i
@@ -231,11 +230,15 @@ class JohannsenClassic (st.Strategy):
             self.do_one_day (time_now, my_portfolio, portfolio_caretaker,
                             constant_std, symbol_to_trade,
                             nparray_quotations, verbose)
+            TCV.append (my_portfolio.get_TCV())
 
             verbose = True
-            if verbose and i%1000==0:
+            if verbose and i%3000==0:
                 print("i =",i)
                 print(my_portfolio)
+                plt.plot(TCV)
+                plt.show()
+                input("Press Enter to continue...")
 
             i+=1
         #portfolio.plot()
