@@ -39,13 +39,13 @@ def test_strategy () -> None :
 
     #Another version with my selected pairs
     pairs_to_trade= {}
-    pairs_to_trade [quote_currency] = ["BTCUSDT", "ETHUSDT", "LTCUSDT", "BCHUSDT", "SOLUSDT"]
+    pairs_to_trade [quote_currency] = ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BCHUSDT", "SOLUSDT"]
     parameters_scrap["symbols"] = pairs_to_trade
     dr.retrieve_historic_from_binance_datas (parameters_scrap)
     #Another version with my selected pairs
 
     #3rd I convert them into a dataframe
-    print("To dataframe")
+    print("To dataframe: Start")
     # pairs_to_trade = symbols_scrapped[quote_currency]
     pairs_to_trade = pairs_to_trade[quote_currency]
     market_quotations = cd.csv_to_dataframe_of_many_pairs(pairs_to_trade, 'spot', '15m')
@@ -63,10 +63,11 @@ def test_strategy () -> None :
     # print(my_portfolio)
     # my_portfolio.presentState()
 
+    print("Strategy: Start.")
     #Parameters for johanssen Strategy
     days_rolling_window = 300
     time_cycle_in_second = 15*60
-    initial_investment_percentage = 1.
+    initial_investment_percentage = 0.10
     transaction_cost = 0.0015
     strategy_name = "Test Strategy"
 
@@ -77,3 +78,5 @@ def test_strategy () -> None :
 
     constant_std = 1.0
     johannsen_strategy.do_algorithm(my_portfolio, constant_std, pairs_to_trade, False)
+    print("Strategy: Done.")
+

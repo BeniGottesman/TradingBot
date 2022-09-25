@@ -1,7 +1,7 @@
 import binance_client as bc
 import binance_data.data_retrieving as dr
 import enums as cst
-import maths.statistics as statistics
+import Maths.statistics as statistics
 
 clientSingletonInstance = bc.client()
 client = clientSingletonInstance.get_client()

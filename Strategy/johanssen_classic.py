@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-import maths.statistics as statistics
+import Maths.statistics as statistics
 import Strategy.strategy_state as state
 import Strategy.strategy as st
 import Portfolio.share as sh
@@ -17,7 +17,7 @@ class JohannsenClassic (st.Strategy):
     """JohannsenClassic is a class in which we apply the Johannsen strategy."""
     def __init__(self, portfolio: pf.Portfolio,
                  _daysrollingwindow: int, _time_cycle_in_second: int,
-                 _initial_investment_percentage : float, _transaction_cost: float, 
+                 _initial_investment_percentage : float, _transaction_cost: float,
                  _name="generic strategy") -> None:
         self.__time_cycle_in_second__ = _time_cycle_in_second #15mn=15*60 for instance
         self.__rollingwindowindays__ = _daysrollingwindow #=30 days for instance
@@ -25,6 +25,7 @@ class JohannsenClassic (st.Strategy):
         self.__transaction_cost__ = _transaction_cost
         self.__backtest__ = st.BacktestCommand(portfolio)
         if _initial_investment_percentage > 1 or _initial_investment_percentage < 0:
+            print('error JohannsenClassic: _initial_investment_percentage')
             sys.exit()
         #initial_investment_percentage=This variable is 1 i.e. not used yet
         #i.e. 0.2% of the capital for instance
@@ -63,10 +64,12 @@ class JohannsenClassic (st.Strategy):
 
         # if verbose :
         #     print ("There are", jres.r, "cointegration vectors")
+        #     input("Press Enter to continue...")
 
         # v =  np.array ([np.ones(jres.r), jres.evecr[:,0], jres.evecr[:,1]], dtype=object)
         spread_weights = jres.evecr[:,0] # Weights to hold in order to make the mean reverting strat
-        spread_weights = spread_weights/spread_weights[0] #normalisation with the first crypto
+        #Warning I have add a - spread
+        spread_weights = spread_weights/-spread_weights[0] #normalisation with the first crypto
 
         # Once I obtain the spread
         # I check the state of the pf
@@ -83,7 +86,7 @@ class JohannsenClassic (st.Strategy):
                 how_much_to_invest_weights = spread_weights/alpha
                 how_much_to_invest_weights = how_much_to_invest_weights/number_of_shares
             else:
-                how_much_to_invest_weights = np.array ([-1000 for key in moneys])
+                how_much_to_invest_weights = np.array ([-1234 for key in moneys])
 
             investment_dict={}
 
@@ -110,7 +113,7 @@ class JohannsenClassic (st.Strategy):
             # plt.plot((mu_average+constant_std*sigma)*np.ones(30))
             # plt.show()
 
-            stop_loss_activated = True
+            stop_loss_activated = False
             if present_strategy_state == "WaitToEntry":
                 #if the last value of the mean reverting serie=spread[-1]<... then
 
@@ -236,7 +239,7 @@ class JohannsenClassic (st.Strategy):
             TCV.append (my_portfolio.get_TCV())
 
             verbose = True
-            if verbose and i%1000==0 and i > 0:
+            if verbose and i%10000==0 and i > 0:
                 print("i =",i)
                 print(my_portfolio)
                 plt.plot(TCV)

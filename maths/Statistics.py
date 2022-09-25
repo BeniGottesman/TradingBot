@@ -21,6 +21,7 @@ def get_johansen(y, p):
         tsignf = jres.cvt                       # critical values
 
         j=2
+        r=0
         for i in range(col):
             if trstat[i] > tsignf[i, j]:     # 0: 90%  1:95% 2: 99%
                 r = i + 1
