@@ -1,17 +1,18 @@
 from datetime import date
 import os
-import dataretrieving as dr
+import binanceDataRetrieve.data_retrieving as dr
 import enums as cst
 import numpy as np
 import pandas as pd
-import maths.Statistics as statistics
-import scrapdatas as bt
+import maths.statistics as statistics
+import binanceDataRetrieve.scrap_datas as bt
 import matplotlib.pyplot as plt
 
 def scrapandjohanssonTest():
     referencePair = 'BTCUSDT'
     checkCryptoVolume = {}
-    # checkCryptoVolume['BTC']  = 100 #we want every pairs with base BTC such that the 24h-volume >500 
+    # checkCryptoVolume['BTC']
+    # = 100 #we want every pairs with base BTC such that the 24h-volume >500 
     checkCryptoVolume['USDT'] = 75000000
     # checkCryptoVolume['BNB']  = 1000
 

@@ -12,13 +12,13 @@
 
 # import Test.ScrapAndJohanssonTest as ScrapAndJohansson
 # import Test.portfolioTest as pfTest
-import Test.mediatortest as medTest
+import Backtest.Backtest as bt
 
 # clienSingletonInstance = bc.client()
 # client = clienSingletonInstance.get_client()
 
 def main ():
     """Main function"""
-    medTest.test_strategy()
+    bt.test_strategy()
 
 main()

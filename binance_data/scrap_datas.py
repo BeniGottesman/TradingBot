@@ -1,15 +1,17 @@
-import binanceclient as bc
-import dataretrieving as dr
+import binance_client as bc
+import binance_data.data_retrieving as dr
 import enums as cst
-import maths.Statistics as statistics
+import maths.statistics as statistics
 
 clientSingletonInstance = bc.client()
 client = clientSingletonInstance.get_client()
 
 def scrap_datas (check_crypto_volume: dict, parameters_scrap: dict, scrap=False)-> dict:
     """
-    CheckCryptoVolume contain the crypto and the 24h-volume minimum to download
-    parameters_scrap contain every parameters for scrapping
+    CheckCryptoVolume is a dict that contains
+    the crypto and the 24h-volume minimum to download
+    if scrap is True, then we scrap the datas w.r.t. retrieve_historic_from_binance_datas
+    and parameters_scrap contains every parameters for scrapping
     """
 
     #1st we check the market with high exchange volume
@@ -26,7 +28,9 @@ def scrap_datas (check_crypto_volume: dict, parameters_scrap: dict, scrap=False)
 
 def get_pairs_volume(**asset)-> dict:
     """
-    We provide a dict checkCryptoVolume['BTC']  = 100,
+    **asset is dict of key base currency
+    and value is the minimal volume
+    i.e. checkCryptoVolume['BTC']  = 100,
     and return every pairs XXXBTC such that the volume is over 100 last 24h
     """
 

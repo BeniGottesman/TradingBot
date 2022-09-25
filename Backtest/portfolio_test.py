@@ -1,5 +1,5 @@
 import Portfolio.portfolio as pf
-import Portfolio.Share as sh
+import Portfolio.share as sh
 
 def test_portfolio () -> None :
     quote_currency = "USD"

@@ -3,7 +3,7 @@ import random
 import string
 from sys import maxsize
 # from typing import List
-import Strategy.Strategy as st
+import Strategy.strategy as st
 import Portfolio.portfolio as pf
 
 #Abstract class

@@ -10,10 +10,10 @@ from typing import List
 import numpy as np
 # from datetime import datetime
 import designPattern.observer as obs
-import designPattern.Memento as Memento
-import Portfolio.PfState as state
-import Portfolio.Share as share
-import Portfolio.abstractinstrument as ai
+import designPattern.memento as memento
+import Portfolio.portfolio_state as state
+import Portfolio.share as share
+import Portfolio.abstract_instrument as ai
 
 class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
 
@@ -68,16 +68,16 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
     def generate_state_data(self) -> dict:
         pass
 
-    def save(self, time: datetime=datetime.date(1970, 1, 1)) -> Memento:
+    def save(self, time: datetime=datetime.date(1970, 1, 1)) -> memento:
         """
         Saves the current state inside a memento.
         """
         my_portfolio_state = self.generate_state_data()
-        return Memento.ConcreteMemento(time, my_portfolio_state)
+        return memento.ConcreteMemento(time, my_portfolio_state)
 
 
     @abstractmethod
-    def restore_state(self, memento: Memento) -> None:
+    def restore_state(self, memento: memento) -> None:
         """
         Restores the Originator's state from a memento object.
         """
@@ -139,7 +139,7 @@ class SeveralPortfolios(AbstractPortfolio):
             state_portfolios [portfolio.get_name()] = portfolio.generate_state_data(portfolio)
         return state_portfolios
 
-    def restore_state(self, memento: Memento) -> None:
+    def restore_state(self, memento: memento) -> None:
         """
         Restores the Originator's state from a memento object.
         """
@@ -349,7 +349,7 @@ class Portfolio(AbstractPortfolio):
             state_portfolios [key] = share_quantity
         return state_portfolios
 
-    def restore_state(self, memento: Memento) -> None:
+    def restore_state(self, memento: memento) -> None:
         """
         Restores the Originator's state from a memento object.
         """

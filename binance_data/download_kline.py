@@ -22,7 +22,10 @@ END_DATE = str(datetime.now().year)+"-"+str(datetime.now().month-1)
 if datetime.now().month == 1: #if we are in January then we go to December lat year
   END_DATE = str(datetime.now().year-1)+"-"+str(12)
 
-def download_monthly_klines(trading_type, symbols, num_symbols, intervals, years, months, start_date, end_date, folder, checksum):
+def download_monthly_klines(trading_type, symbols, num_symbols, intervals, years, months, start_date, end_date, folder, checksum, verbose = False):
+  """
+  Download datas and unzip them
+  """
   current = 0
   date_range = None
 
@@ -40,7 +43,7 @@ def download_monthly_klines(trading_type, symbols, num_symbols, intervals, years
   else:
     start_date = datetime.strptime(start_date,'%Y-%m-%d').date()
 
-  end_date = end_date + '-01'#for 
+  end_date = end_date + '-01'
   if not end_date:
     end_date = END_DATE
   else:
@@ -59,15 +62,18 @@ def download_monthly_klines(trading_type, symbols, num_symbols, intervals, years
             file_name = "{}-{}-{}-{}".format(symbol.upper(), interval, year, '{:02d}'.format(month))
             path_to_file = folder+path+file_name
             if exists(path_to_file+'.pkl'):
-              print(path_to_file,".pkl already exists")
+              if verbose:
+                print(path_to_file,".pkl already exists")
               continue
             if exists(path_to_file+'.csv'):
-              print(path_to_file,".csv already exists")
+              if verbose:
+                print(path_to_file,".csv already exists")
               continue
             #We rewrite the path with \\ only
             path_to_zip_file = path_to_file.replace('/','\\')+".zip"
             if os.path.isfile(path_to_zip_file):
-              print(path_to_zip_file," already exists so we remove it, redownload a cleaner version")
+              if verbose:
+                print(path_to_zip_file," already exists so we remove it, redownload a cleaner version")
               os.remove(path_to_zip_file)
             #we start the download and if the download does not occur
             if not download_file(path, file_name+'.zip', '', folder):

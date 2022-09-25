@@ -3,13 +3,13 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-import maths.Statistics as statistics
-import Strategy.Strategystate as state
-import Strategy.Strategy as st
-import Portfolio.Share as sh
+import maths.statistics as statistics
+import Strategy.strategy_state as state
+import Strategy.strategy as st
+import Portfolio.share as sh
 import Portfolio.portfolio as pf
-import Portfolio.PfState as pfstate
-import marketquotation as mq
+import Portfolio.portfolio_state as pfstate
+import market_quotation as mq
 
 # market_quotations = mq.MarketQuotation()
 
@@ -236,12 +236,13 @@ class JohannsenClassic (st.Strategy):
             TCV.append (my_portfolio.get_TCV())
 
             verbose = True
-            if verbose and i%10000==0:
+            if verbose and i%1000==0 and i > 0:
                 print("i =",i)
                 print(my_portfolio)
                 plt.plot(TCV)
-                plt.show()
-                input("Press Enter to continue...")
+                # plt.show()
+                plt.pause(0.05)
+                # input("Press Enter to continue...")
 
             i+=1
         #portfolio.plot()

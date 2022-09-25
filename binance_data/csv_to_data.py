@@ -1,34 +1,15 @@
 import os
+import string
 import sys
 import pandas as pd
 import numpy as np
 
 fileDirectory = os.getcwd()
 sys.path.append(fileDirectory+"binanceDataRetrieve\\")
-from binanceDataRetrieve import downloadkline as dk
+from binance_data import download_kline as dk
 import enums as cst
 
-
-def retrieve_historic_from_binance_datas (parameters_scrap):
-    """
-    Download the datas from binance.data, inside data folder and
-    """
-    folder = parameters_scrap["folder"]
-    years = parameters_scrap["years"]
-    months = parameters_scrap["months"]
-    symbols = parameters_scrap["symbols"]
-    trading_type = parameters_scrap["trading_type"]
-    intervals = parameters_scrap["intervals"]
-    start_date = parameters_scrap["startDate"]
-    end_date = parameters_scrap["endDate"]
-    checksum = parameters_scrap["checksum"]
-    for quote_currency in symbols: #quote currency
-        num_symbols = len(symbols[quote_currency])
-        dk.download_monthly_klines(trading_type, symbols[quote_currency],
-                                   num_symbols, intervals, years, months,
-                                   start_date, end_date, folder, checksum)
-
-def csv_to_dataframe (file)->pd.DataFrame:
+def csv_to_dataframe (file: string)->pd.DataFrame:
     """
     Convert a csv file into a DataFrame.
     """
@@ -56,7 +37,9 @@ def csv_to_dataframe (file)->pd.DataFrame:
     return hist_df
 
 #hist_df = CSVFolderToDataFrame("BNBUSDT", "spot", "15m")
-def csv_pair_folder_to_dataframe (pair, trading_type, interval,verbose=False)->pd.DataFrame:
+def csv_pair_folder_to_dataframe (pair: string,
+                                  trading_type: string,
+                                  interval: string, verbose=False)->pd.DataFrame:
     """
     This Function Take A pair, trading type = ''spot'', and an interval=''15m''.
     Then convert the csv file into a dataframe.
@@ -89,7 +72,9 @@ def csv_pair_folder_to_dataframe (pair, trading_type, interval,verbose=False)->p
 
 
 #add minimum time, in scrapdata
-def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->list[pd.DataFrame]:
+def csv_to_dataframe_of_many_pairs (pairs: string,
+                                    trading_type: string,
+                                    interval: string)->list[pd.DataFrame]:
     """
     Provide a list of pairs, then call CSVFolderToDataFrame() above, and
     return dict of dataframe.
@@ -105,24 +90,13 @@ def csv_to_dataframe_of_many_pairs (pairs, trading_type, interval)->list[pd.Data
         pairs = [pairs]
     for pair in pairs:
         market_history_df[pair] = csv_pair_folder_to_dataframe (pair, trading_type, interval)
-        #market_history_df[pair] = market_history_df[pair].sort_index(ascending=True)
-        #Issue on laptop
         if minimum_date < market_history_df[pair].index.get_level_values('Close Time')[0]:
             minimum_date = market_history_df[pair].index.get_level_values('Close Time')[0]
-        #Next line work On laptop
-        # if minimum_date < market_history_df[pair]['Open Time'].iloc[-1]:
-        #     minimum_date = market_history_df[pair]['Open Time'].iloc[-1]
     #every arrays will start with the same date.
     for pair in pairs:
         market_history_df[pair] =\
             market_history_df[pair]\
                 .loc[(market_history_df[pair].index.get_level_values('Close Time') > minimum_date)]
-        #for inplace=True, see (2)
-        # market_history_df[pair].set_index(['Open Time', 'Close Time'], inplace=True)
-        #market_history_df[pair] = market_history_df[pair].sort_index(ascending=True)
-        #This next line is for ascending=True on laptop we can see (3)
-        # market_history_df[pair] =
-        # market_history_df[pair].interpolate(method='linear', limit_direction='forward', axis=0)
 
     return market_history_df
 

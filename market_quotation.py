@@ -1,6 +1,6 @@
 from datetime import datetime
 import pandas as pd
-from designPattern.Singleton import Singleton
+from designPattern.singleton import Singleton
 
 class MarketQuotation():
     def __init__(self, _quotations: pd.DataFrame):#, _quotations: pd.DataFrame):

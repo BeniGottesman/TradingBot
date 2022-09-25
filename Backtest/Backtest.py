@@ -1,11 +1,12 @@
 import Portfolio.portfolio as pf
-import Portfolio.Share as sh
-import Strategy.JohanssenClassic as jo
+import Portfolio.share as sh
+import Strategy.johanssen_classic as jo
 import mediator as med
 import enums as cst
-import scrapdatas as bt
-import dataretrieving as dr
-import marketquotation as mq
+import binance_data.scrap_datas as bt
+import binance_data.data_retrieving as dr
+import binance_data.csv_to_data as cd
+import market_quotation as mq
 
 
 def test_strategy () -> None :
@@ -24,7 +25,9 @@ def test_strategy () -> None :
                    "trading_type": "spot", "intervals": ['15m'],
                    "startDate": "2019-01", "endDate": "2022-08",
                    "checksum": False}
-    do_i_scrap = False#False #Turn to true for scrapping market datas
+
+    #Old test
+    #do_i_scrap = False #Turn to true for scrapping market datas
     # symbols_scrapped = bt.scrap_datas(check_crypto_volume, parameters_scrap, do_i_scrap)
     #Scrap w.r.t. the volume
 
@@ -37,7 +40,7 @@ def test_strategy () -> None :
     #Another version with my selected pairs
     pairs_to_trade= {}
     pairs_to_trade [quote_currency] = ["BTCUSDT", "ETHUSDT", "LTCUSDT", "BCHUSDT", "SOLUSDT"]
-    parameters_scrap["symbols"]=pairs_to_trade
+    parameters_scrap["symbols"] = pairs_to_trade
     dr.retrieve_historic_from_binance_datas (parameters_scrap)
     #Another version with my selected pairs
 
@@ -45,7 +48,7 @@ def test_strategy () -> None :
     print("To dataframe")
     # pairs_to_trade = symbols_scrapped[quote_currency]
     pairs_to_trade = pairs_to_trade[quote_currency]
-    market_quotations = dr.csv_to_dataframe_of_many_pairs(pairs_to_trade, 'spot', '15m')
+    market_quotations = cd.csv_to_dataframe_of_many_pairs(pairs_to_trade, 'spot', '15m')
     #We initialize the market quotation client
     mq.MarketQuotationClient (market_quotations)
     # test.get_client().set_quotations(market_quotations)

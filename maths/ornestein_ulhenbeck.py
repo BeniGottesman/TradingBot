@@ -24,8 +24,7 @@ def get_OU_process(
     T: int,
     OU_params: OUParams,
     X_0: Optional[float] = None,
-    random_state: Optional[int] = None,
-) -> np.ndarray:
+    random_state: Optional[int] = None) -> np.ndarray:
     """
     - T is the sample size.
     - Ou_params is an instance of OUParams dataclass.
