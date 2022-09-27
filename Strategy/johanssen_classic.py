@@ -2,6 +2,7 @@ import datetime
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from time import time
 
 import Maths.statistics as statistics
 import Strategy.strategy_state as state
@@ -44,7 +45,7 @@ class JohannsenClassic (st.Strategy):
         number_of_shares  = quotations.shape[1]
         log_return = np.zeros(shape=(time_serie_size, number_of_shares))
 
-        # market_quotation = mq.MarketQuotationClient().get_client().get_quotation()
+        market_quotation = mq.MarketQuotationClient().get_client()
 
         # First we compute the spread
         for i in range (number_of_shares):
@@ -53,11 +54,6 @@ class JohannsenClassic (st.Strategy):
             col = np.array (statistics.log_Transform(quotations[:,i]))
             log_return [:,i] = col
 
-        # pd_lr_price_series =
-        # pd.DataFrame(index=quotations['Close Time'],
-        # data={key: log_return[key] for key in log_return})
-        # pd_lr_price_series =
-        # pd_lr_price_series[-self.__rollingwindow__:]#we take only the last 30 days
         p_test = 1
         #log_return=pd.DataFrame(data={key: log_return[key] for key in log_return})
         jres = statistics.get_johansen(log_return, p_test)
@@ -68,8 +64,14 @@ class JohannsenClassic (st.Strategy):
 
         # v =  np.array ([np.ones(jres.r), jres.evecr[:,0], jres.evecr[:,1]], dtype=object)
         spread_weights = jres.evecr[:,0] # Weights to hold in order to make the mean reverting strat
-        #Warning I have add a - spread
-        spread_weights = spread_weights/-spread_weights[0] #normalisation with the first crypto
+        spread_weights = spread_weights/spread_weights[0] #normalisation with the first crypto
+
+        #since the spread is wrt the log so we add this loop
+        for i, _ in enumerate(spread_weights):
+            _share_name = moneys[i]
+            tmp_mq = market_quotation.\
+                quotation('Close Time', _share_name, time_now)
+            spread_weights [i] = spread_weights [i]*np.log(tmp_mq)/tmp_mq
 
         # Once I obtain the spread
         # I check the state of the pf
@@ -149,7 +151,7 @@ class JohannsenClassic (st.Strategy):
                 # balance = portfolio.get_BAL()
                 # # if (portfolio_value-balance)/(buying_value-balance) > 1.002+0.0015 :
                  #we exit the Short strategy
-                if (portfolio_value)/(buying_value) > 1.05+0.0015 :
+                if (portfolio_value)/(buying_value) > 1.0001+0.0015 :
                     if spread[-1] < mu_average-constant_std*sigma and self.__short_strategy__:
                         # if spread[-1] - spread[-2] < 0:
                         self.__backtest__.exit(time_now)
@@ -212,10 +214,13 @@ class JohannsenClassic (st.Strategy):
         nparray_quotations = np.zeros(shape=(self.__rollingwindow__, number_of_shares))
         i=0
         TCV = []
+        t_0 = time() #1. We measure the time taken by the algorithm
         while True:
             beginning = i
             end = self.__rollingwindow__ + i
             if end >= number_of_quotations_periods:
+                t_1 = time() #2. We measure the time taken by the algorithm
+                print("time taken = ", t_1-t_0)
                 print(my_portfolio)
                 plt.plot(TCV)
                 plt.show()
@@ -239,13 +244,16 @@ class JohannsenClassic (st.Strategy):
             TCV.append (my_portfolio.get_TCV())
 
             verbose = True
-            if verbose and i%10000==0 and i > 0:
-                print("i =",i)
+            if verbose and i%500==0 and i > 0:
+                t_1 = time() #2. We measure the time taken by the algorithm
+                print("i=", i, "time taken =", t_1-t_0)
+                # t_0 = t_1
                 print(my_portfolio)
-                plt.plot(TCV)
-                # plt.show()
-                plt.pause(0.05)
-                # input("Press Enter to continue...")
+                if verbose and i%10000==0:
+                    plt.plot(TCV)
+                    # plt.show()
+                    plt.pause(0.05)
+                    # input("Press Enter to continue...")
 
             i+=1
         #portfolio.plot()

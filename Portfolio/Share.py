@@ -63,20 +63,21 @@ class CryptoCurrency(Share):
     #return the value hold in $
     #ToUpdate
     def value(self, time: datetime=datetime.date(1970, 1, 1)) -> str:
-        market_quotation = mq.MarketQuotationClient().get_client().get_quotation()
+        market_quotation = mq.MarketQuotationClient().get_client()
         _share_name = self.__name__
 
-        ####Enhanced this part####
-        tmp_df = market_quotation[_share_name]
-        tmp_df_closetime = tmp_df.index.get_level_values('Close Time')
-        #see (2) about iloc
-        if (tmp_df_closetime == time).any() : #greedy
-            tmp_df = tmp_df.iloc[tmp_df_closetime == time] #greedy X2
-            _quote_current_value = tmp_df["Close"].iloc[0]
-        else:
-            d = min(tmp_df_closetime, key=lambda _d: abs(_d - time))
-            _quote_current_value = tmp_df[tmp_df_closetime==d]['Close'].iloc[0]
+        # ####Enhanced this part####
+        # tmp_df = market_quotation[_share_name]
+        # tmp_df_closetime = tmp_df.index.get_level_values('Close Time')
+        # #see (2) about iloc
+        # if (tmp_df_closetime == time).any() : #greedy
+        #     tmp_df = tmp_df.iloc[tmp_df_closetime == time] #greedy X2
+        #     _quote_current_value = tmp_df["Close"].iloc[0]
+        # else:
+        #     d = min(tmp_df_closetime, key=lambda _d: abs(_d - time))
+        #     _quote_current_value = tmp_df[tmp_df_closetime==d]['Close'].iloc[0]
 
+        _quote_current_value = market_quotation.quotation('Close Time', _share_name, time)
         return _quote_current_value * self.__number_of_shares__
 
     def is_key_exists (self, key: string) -> bool:

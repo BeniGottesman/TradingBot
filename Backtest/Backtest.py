@@ -79,4 +79,3 @@ def test_strategy () -> None :
     constant_std = 1.0
     johannsen_strategy.do_algorithm(my_portfolio, constant_std, pairs_to_trade, False)
     print("Strategy: Done.")
-
