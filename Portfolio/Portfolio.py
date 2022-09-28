@@ -349,11 +349,11 @@ class Portfolio(AbstractPortfolio):
             state_portfolios [key] = share_quantity
         return state_portfolios
 
-    def restore_state(self, memento: memento) -> None:
+    def restore_state(self, mem: memento) -> None:
         """
         Restores the Originator's state from a memento object.
         """
-        state_portfolios = memento.get_state()#retutrn a dictionary
+        state_portfolios = mem.get_state()#return a dictionary
         self.__name__ = state_portfolios ["Portfolio name"]
         self.__time_last_transaction__ = state_portfolios ["Transaction Time"]
         self.set_TCV(state_portfolios ["TCV"])
@@ -462,9 +462,9 @@ class Portfolio(AbstractPortfolio):
         tmp_short = 0
         my_shares = self.__shares__
         for _, this_share in my_shares.items():
-            if this_share.get_share_quantity() > 0:
+            if this_share.get_share_quantity() > 0:#long
                 tmp_long += this_share.value(time)
-            elif this_share.get_share_quantity() < 0:
+            elif this_share.get_share_quantity() < 0:#short
                 tmp_short -= this_share.value(time)
             # if this_share.get_share_quantity() > 0:
             #     tmp_value += this_share.value(time)

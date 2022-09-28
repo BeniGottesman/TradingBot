@@ -13,6 +13,13 @@ class StrategyState(st.StateAbstract):
     #     super().__init__()
 
     @abstractmethod
+    def get_state (self) -> str:
+        """
+        Return a string containing the state.
+        """
+        pass
+
+    @abstractmethod
     def my_state_is (self) -> None:
         pass
 
@@ -27,7 +34,7 @@ class StrategyWaitToEntry (StrategyState):
     def my_state_is (self) -> None:
         print ("Strategy : Wait for an entry Signal")
 
-    def get_state (self) -> None:
+    def get_state (self) -> str:
         return "WaitToEntry"
 
 class StrategyWaitToExit (StrategyState):
@@ -37,6 +44,29 @@ class StrategyWaitToExit (StrategyState):
     def my_state_is (self) -> None:
         print ("Strategy : Wait for an exit Signal")
 
-    def get_state (self) -> None:
+    def get_state (self) -> str:
         return "WaitToExit"
-    
+
+class StrategyFreeze (StrategyState):
+    def __init__(self, _freeze_time_: int):
+        self.__freeze_time__ = _freeze_time_
+        self.__cycle_counter__ = 0
+
+    def __str__(self):
+        return "Freeze"
+
+    def my_state_is (self) -> None:
+        print ("Strategy : has been Frozen")
+
+    def get_state (self) -> str:
+        return "Freeze"
+
+    def get_counter(self) -> int:
+        return self.__cycle_counter__
+
+    def add_counter(self) -> StrategyState:
+        if self.__cycle_counter__ < self.__freeze_time__:
+            self.__cycle_counter__ = self.__cycle_counter__ + 1
+            if self.__cycle_counter__ < self.__freeze_time__:
+                return self
+        return StrategyWaitToEntry()

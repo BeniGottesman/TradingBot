@@ -55,7 +55,7 @@ def ADFUnitRootTest ():
     for sym in Big_Volume_Symbols:
         #We do a log-return
         log_return = log_Transform(data [sym].close)
-        
+
         #perform augmented Dickey-Fuller test
         statresult[sym] = adfuller(log_return, autolag="AIC")
         dfoutput[sym] = pd.Series(

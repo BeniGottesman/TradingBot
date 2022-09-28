@@ -83,7 +83,7 @@ class BacktestCommand(StrategyCommandPortfolio):
         if verbose:
             print("We exit the strat.")
 
-        tmp_balance = 0
+        # tmp_balance = 0
         tmp_portfolio_value = self.pf.value(time)
         shares = self.pf.get_shares()
         for key in shares.keys():
