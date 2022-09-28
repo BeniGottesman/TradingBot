@@ -19,7 +19,7 @@ class JohannsenClassic (st.Strategy):
     def __init__(self, portfolio: pf.Portfolio,
                  _daysrollingwindow: int, _time_cycle_in_second: int,
                  _initial_investment_percentage : float, _transaction_cost: float,
-                 _name="generic strategy") -> None:
+                 _freezing_cycle: int, _name="generic strategy") -> None:
         self.__time_cycle_in_second__ = _time_cycle_in_second #15mn=15*60 for instance
         self.__rollingwindowindays__ = _daysrollingwindow #=30 days for instance
         self.__rollingwindow__ = int ((60/(self.__time_cycle_in_second__/60))*24*_daysrollingwindow)
@@ -33,7 +33,7 @@ class JohannsenClassic (st.Strategy):
         self.__initial_investment_percentage__ = _initial_investment_percentage
         self.__state__ = state.StrategyWaitToEntry()
         self.__short_strategy__ = False
-        self.__freezing_cycle__ = 5 * (24*60/15) #4 days freezing
+        self.__freezing_cycle__ = _freezing_cycle
 
 
     # c=0.75 -> mu +/- 0.75xsigma
@@ -53,7 +53,7 @@ class JohannsenClassic (st.Strategy):
             col = np.array (statistics.log_Transform(quotations[:,i]))
             log_return [:,i] = col
 
-        p_test = 0
+        p_test = 1
         jres = statistics.get_johansen(log_return, p_test)
 
         # if verbose :
@@ -92,6 +92,7 @@ class JohannsenClassic (st.Strategy):
 
             # plt.plot(spread[-30:])
             # plt.plot((mu_average-constant_std*sigma)*np.ones(30))
+            # plt.plot((mu_average)*np.ones(30))
             # plt.plot((mu_average+constant_std*sigma)*np.ones(30))
             # plt.show()
 
@@ -104,7 +105,7 @@ class JohannsenClassic (st.Strategy):
                     how_much_to_invest_weights = spread_weights/alpha
                     how_much_to_invest_weights = how_much_to_invest_weights/number_of_shares
                 else:
-                    print("my_money<=0\n")
+                    print("WARNING : my_money<=0\n")
                     how_much_to_invest_weights = np.array ([-1234 for key in moneys])
 
                 investment_dict={}
@@ -116,7 +117,7 @@ class JohannsenClassic (st.Strategy):
                 # plt.plot ((mu_average-constant_std*sigma)*np.ones(len(spread) ))
                 # plt.plot ((mu_average+constant_std*sigma)*np.ones(len(spread) ))
                 # plt.show()
-                # input()
+
                 #we start the Long strategy
                 if spread[-1] < mu_average-constant_std*sigma:
                     if spread[-1] - spread[-2] > 0:
@@ -149,12 +150,14 @@ class JohannsenClassic (st.Strategy):
                 #we exit the Short strategy
                 # if portfolio_value/buying_value > 1.1+0.0015 :
                 if spread[-1] < mu_average-constant_std*sigma and self.__short_strategy__:
+                # if spread[-1] < mu_average and self.__short_strategy__:
                     if spread[-1] - spread[-2] < 0:
                         self.__backtest__.exit(time_now)
                         self.__state__ = state.StrategyWaitToEntry()
                         self.__short_strategy__ = False
                 #we exit the long strategy
                 elif spread[-1] > mu_average+constant_std*sigma and not self.__short_strategy__:
+                # elif spread[-1] > mu_average and not self.__short_strategy__:
                     if spread[-1] - spread[-2] > 0:
                         self.__backtest__.exit(time_now)
                         self.__state__ = state.StrategyWaitToEntry()
@@ -198,19 +201,17 @@ class JohannsenClassic (st.Strategy):
             my_portfolio.add_share(sh.CryptoCurrency(key))
 
         market_quotation = mq.MarketQuotationClient().get_client().get_quotation()
-        #see (1)
-        # number_of_quotations_periods = len(symbol_to_trade[symbol_to_trade[0]]["Close"])
-        # number_of_quotations_periods = number of rows
-        number_of_quotations_periods = len(market_quotation[symbol_to_trade[0]])
-        # number_of_quotations_periods = market_quotation.shape[0]
-        # print("size=",market_quotation)
+        market = mq.MarketQuotationClient().get_client()
+        number_of_quotations_periods = market.number_of_period()
 
         portfolio_caretaker = pf.PortfolioCaretaker(my_portfolio)
         number_of_shares = my_portfolio.get_number_of_shares()
         nparray_quotations = np.zeros(shape=(self.__rollingwindow__, number_of_shares))
-        i=0
+
         TCV = []
         t_0 = time() #1. We measure the time taken by the algorithm
+        tmp_sym = symbol_to_trade[0]#it is the first symbol just to browse the df
+        i=0
         while True:
             beginning = i
             end = self.__rollingwindow__ + i
@@ -218,8 +219,8 @@ class JohannsenClassic (st.Strategy):
                 t_1 = time() #2. We measure the time taken by the algorithm
                 print("time taken = ", t_1-t_0)
                 print(my_portfolio)
-                plt.plot(TCV)
-                plt.show()
+                x_axis = market.get_index(tmp_sym, 'Close Time', self.__rollingwindow__, end+1)
+                self.plot_result(x_axis, TCV)
                 break
             my_shares = my_portfolio.get_shares()
             j=0
@@ -229,10 +230,7 @@ class JohannsenClassic (st.Strategy):
                 nparray_quotations [:,j] = col
                 # q = np.concatenate ([q, col], axis=1)
                 j+=1
-            #index.get_level_values, see (2): Selecting from multi-index pandas
-            time_now =\
-                market_quotation[symbol_to_trade[0]][ beginning : end ]\
-                                .index.get_level_values('Close Time')[-1]
+            time_now = market.time(tmp_sym, 'Close Time', end)
             my_portfolio.update_portfolio(time_now)
             self.do_one_day (time_now, my_portfolio, portfolio_caretaker,
                             constant_std, symbol_to_trade,
@@ -245,14 +243,20 @@ class JohannsenClassic (st.Strategy):
                 print("i=", i, "time taken =", t_1-t_0)
                 # t_0 = t_1
                 print(my_portfolio)
-                if verbose and i%5000==0:
-                    plt.plot(TCV)
-                    # plt.show()
-                    plt.pause(0.05)
-                    # input("Press Enter to continue...")
+                if verbose and i%1000==0:
+                    tmp_sym = symbol_to_trade[0]
+                    x_axis = market.get_index(tmp_sym, 'Close Time', self.__rollingwindow__, end+1)
+                    self.plot_result(x_axis, TCV)
 
             i+=1
-        #portfolio.plot()
+
+    def plot_result(self, x_axis, _TCV: list) -> None :
+        plt.clf()
+        plt.plot(x_axis, _TCV)
+        plt.gcf().autofmt_xdate()
+        # plt.show()
+        plt.pause(0.05)
+        # input("Press Enter to continue...")
 
 # References
 # Binance Fees calculator : https://www.binance.com/en/support/faq/e85d6e703b874674840122196b89780a
