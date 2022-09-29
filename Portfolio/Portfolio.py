@@ -8,12 +8,15 @@ import datetime
 import string
 from typing import List
 import numpy as np
+from traitlets import Bool
+
 # from datetime import datetime
 import designPattern.observer as obs
 import designPattern.memento as memento
 import Portfolio.portfolio_state as state
 import Portfolio.share as share
 import Portfolio.abstract_instrument as ai
+import market_quotation as mq
 
 class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
 
@@ -32,7 +35,6 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
 
     ##################################
     #########Observer Pattern#########
-    # _state: int = None
     __observers__: List[obs.Observer] = []
 
     def attach(self, observer: obs.Observer) -> None:
@@ -41,11 +43,6 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
 
     def detach(self, observer: obs.Observer) -> None:
         self.__observers__.remove(observer)
-
-
-    @abstractmethod
-    def getWeightArrayOfShares (self) -> np.array:
-        pass
 
     @abstractmethod
     def notify(self, verbose = False) -> None:
@@ -56,11 +53,18 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
     @abstractmethod
     def report(self, verbose = False) -> dict:
         """
-        Create q report and Notify the observators
+        Create a report and Notify the observators
         """
         pass
     #########Observer Pattern#########
     ##################################
+
+    @abstractmethod
+    def getWeightArrayOfShares (self) -> np.array:
+        """
+        Return an np.array containing the number of shares
+        """
+        pass
 
     #######################
     ####Memento Pattern####
@@ -107,6 +111,24 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
     def add_BAL(self, value: float) -> None:
         pass
     ####TCV & BAL####
+    #################
+
+    #################
+    ####Capital######
+    @abstractmethod
+    def how_much_capital_invested_in_percentage(self,
+                                                time: datetime=datetime.date(1970, 1, 1))-> float:
+        pass
+    @abstractmethod
+    def add_capital(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
+        pass
+    @abstractmethod
+    def is_capital_available(self, time: datetime=datetime.date(1970, 1, 1)) -> Bool:
+        pass
+    @abstractmethod
+    def get_capital(self, time: datetime=datetime.date(1970, 1, 1)) -> float:
+        pass
+    ####Capital######
     #################
 
 
@@ -209,6 +231,51 @@ class SeveralPortfolios(AbstractPortfolio):
     ####BAL getter setter####
     #########################
 
+
+#################################################
+#########Capital functions#######################
+#########Useful for an hedging strategy##########
+    def get_capital(self, time: datetime=datetime.date(1970, 1, 1)) -> float:
+        """
+        Return the available capital to invest in the market at certain time
+        """
+        capital = 0
+        for portfolio in self.__portfolios__:
+            capital += portfolio.get_capital(time)
+        return capital
+
+    def is_capital_available(self, time: datetime=datetime.date(1970, 1, 1)) -> Bool:
+        """
+        Return True if there is available capital to invest in quote currency
+        but not tell us the portfolio
+        """
+        tmp = self.get_capital(time)
+        if tmp > 0:
+            return True
+        return False
+
+    def add_capital(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
+        """
+        If there is available capitale then this function add capital * percentage
+        to invest into the market
+        """
+        for portfolio in self.__portfolios__:
+            pf_name = portfolio.get_name()
+            _p = percentage[pf_name]
+            portfolio.add_capital(_p, time)
+
+    def how_much_capital_invested_in_percentage(self,
+                                                time: datetime=datetime.date(1970, 1, 1))-> float:
+        """
+        Return the amount in percentage of available capital
+        """
+        capital = self.get_capital(time)
+        tcv = self.get_TCV()
+        return (capital-tcv)/100
+#########Capital functions##########
+####################################
+
+
     def is_composite (self) -> bool:
         return True
 
@@ -303,6 +370,57 @@ class Portfolio(AbstractPortfolio):
     def add_BAL(self, value: float) -> None:
         self.__BAL__ += value
 #########BAL getter setter##########
+####################################
+
+#################################################
+#########Capital functions#######################
+#########Useful for an hedging strategy##########
+#Need to add to several portfolio
+    def get_capital(self, time: datetime=datetime.date(1970, 1, 1)) -> float:
+        """
+        Return the available capital to invest in the market at certain time
+        """
+        market_quotation = mq.MarketQuotationClient().get_client()
+        tmp = 0
+        my_shares = self.__shares__
+        for key, this_share in my_shares.items():
+            _quote_current_value = market_quotation.quotation('Close Time', this_share, time)
+            tmp += abs (this_share[key].getShareQuantity())*_quote_current_value
+        return self.get_TCV() - tmp
+
+    def is_capital_available(self, time: datetime=datetime.date(1970, 1, 1)) -> Bool:
+        """
+        Return True if there is available capital to invest in quote currency
+        """
+        tmp = self.get_capital(time)
+        if tmp > 0:
+            return True
+        return False
+
+    def add_capital(self, percentage: float, time: datetime=datetime.date(1970, 1, 1)) -> None:
+        """
+        If there is available capitale then this function add capital * percentage
+        to invest into the market
+        """
+        capital = self.get_capital(time)
+        if capital < 0:
+            print ("add_capital(): No capital Available to invest more")
+            return
+        if percentage > 1 or percentage < 0:
+            print ("add_capital(): p=", percentage, "% Need to be between 0 and 1")
+            return
+        amount_to_invest = capital * percentage
+        self.add_BAL(amount_to_invest)
+
+    def how_much_capital_invested_in_percentage(self,
+                                                time: datetime=datetime.date(1970, 1, 1))-> float:
+        """
+        Return the amount in percentage of available capital
+        """
+        capital = self.get_capital(time)
+        tcv = self.get_TCV()
+        return (capital-tcv)/100
+#########Capital functions##########
 ####################################
 
 ##############################################################
@@ -531,16 +649,16 @@ class PortfolioCaretaker():
         if len(self._mementos) == 0:
             return
 
-        memento = self._mementos.pop()
+        mem = self._mementos.pop()
         # print(f"Caretaker: Restoring state to: {memento.get_name()}")
         try:
-            self._originator.restore_state(memento)
+            self._originator.restore_state(mem)
         except Exception:
             self.undo()
 
     def show_history(self) -> None:
-        for memento in self._mementos:
-            print(memento.get_name())
+        for mem in self._mementos:
+            print(mem.get_name())
 ############MEMENTO PATTERN############
 #######################################
 

@@ -26,9 +26,17 @@ class Subject(ABC):
     @abstractmethod
     def notify(self) -> None:
         """
-        Notify all observers about an event.
+        Notify/Send a report to all observers about an event.
         """
         pass
+
+    @abstractmethod
+    def report(self) -> dict:
+        """
+        Return a report of the strategy
+        """
+        pass
+
 
 class Observer(ABC):
     """
@@ -41,3 +49,7 @@ class Observer(ABC):
         Receive update from subject.
         """
         pass
+
+
+#References
+#https://refactoring.guru/design-patterns/observer/python/example

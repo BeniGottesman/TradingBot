@@ -129,6 +129,7 @@ class JohannsenClassic (st.Strategy):
                         portfolio.set_transaction_time(time_now)
                         portfolio_caretaker.backup(time_now)
                         self.__state__ = state.StrategyWaitToExit()
+                        self.update_report(time_now,"Long","Enter", portfolio)
                  #we start the Short strategy
                 elif spread[-1] > mu_average+constant_std*sigma:
                     if spread[-1] - spread[-2] < 0:
@@ -143,6 +144,7 @@ class JohannsenClassic (st.Strategy):
                         portfolio.set_transaction_time(time_now)
                         portfolio_caretaker.backup(time_now)
                         self.__state__ = state.StrategyWaitToExit()
+                        self.update_report(time_now,"Short","Enter", portfolio)
                         self.__short_strategy__ = True
             elif present_strategy_state == "WaitToExit":
                 buying_value = portfolio_caretaker.get_last_buying_value()
@@ -154,19 +156,23 @@ class JohannsenClassic (st.Strategy):
                     if spread[-1] - spread[-2] < 0:
                         self.__backtest__.exit(time_now)
                         self.__state__ = state.StrategyWaitToEntry()
+                        self.update_report(time_now,"Short","Exit", portfolio)
                         self.__short_strategy__ = False
+
                 #we exit the long strategy
                 elif spread[-1] > mu_average+constant_std*sigma and not self.__short_strategy__:
                 # elif spread[-1] > mu_average and not self.__short_strategy__:
                     if spread[-1] - spread[-2] > 0:
                         self.__backtest__.exit(time_now)
                         self.__state__ = state.StrategyWaitToEntry()
+                        self.update_report(time_now,"Long","Exit", portfolio)
 
                 #Stop Loss at 5%
                 elif portfolio_value/buying_value < 0.95 and stop_loss_activated:
                     self.__backtest__.exit(time_now)
                     self.__state__ = state.StrategyFreeze(self.__freezing_cycle__)
                     print ("STOP LOSS = ",time_now)
+                    self.update_report(time_now,"Stop Loss","Exit", portfolio)
 
             # self.__state__.setState("Nothing")
             #####Hedging : If we want to buy the spread#####
@@ -188,7 +194,7 @@ class JohannsenClassic (st.Strategy):
 
     #Vectorization
     #quotations: pd.DataFrame ?
-    def do_algorithm(self, my_portfolio: pf.Portfolio, constant_std: float,
+    def do_strategy(self, my_portfolio: pf.Portfolio, constant_std: float,
                     symbol_to_trade: list, verbose = False) -> None:
             # timeIndex = quotations[0].index
             # symbol_to_trade = list(symbol_to_trade.keys())
@@ -200,8 +206,9 @@ class JohannsenClassic (st.Strategy):
         for key in symbol_to_trade:
             my_portfolio.add_share(sh.CryptoCurrency(key))
 
-        market_quotation = mq.MarketQuotationClient().get_client().get_quotation()
         market = mq.MarketQuotationClient().get_client()
+        market_quotation = market.get_quotation()
+
         number_of_quotations_periods = market.number_of_period()
 
         portfolio_caretaker = pf.PortfolioCaretaker(my_portfolio)
@@ -243,6 +250,7 @@ class JohannsenClassic (st.Strategy):
                 print("i=", i, "time taken =", t_1-t_0)
                 # t_0 = t_1
                 print(my_portfolio)
+                self.notify()
                 if verbose and i%1000==0:
                     tmp_sym = symbol_to_trade[0]
                     x_axis = market.get_index(tmp_sym, 'Close Time', self.__rollingwindow__, end+1)
@@ -254,9 +262,10 @@ class JohannsenClassic (st.Strategy):
         plt.clf()
         plt.plot(x_axis, _TCV)
         plt.gcf().autofmt_xdate()
-        # plt.show()
         plt.pause(0.05)
         # input("Press Enter to continue...")
+
+
 
 # References
 # Binance Fees calculator : https://www.binance.com/en/support/faq/e85d6e703b874674840122196b89780a
