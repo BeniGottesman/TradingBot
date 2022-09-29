@@ -9,7 +9,7 @@ import designPattern.observer as obs
 
 class Strategy(obs.Subject):
     def __init__(self):
-        self.__strategy_report__: dict = {}
+        self.__strategy_report__ = {}
 
     @abstractmethod
     def do_strategy(self, portfolio: pf.AbstractPortfolio, data: List, verbose = False):
@@ -34,26 +34,27 @@ class Strategy(obs.Subject):
         Notify/Send a report to all observers about the strategy.
         """
         # print("Subject: Notifying observers...")
-        for observer in self._observers:
+        for observer in self.__observers__:
             observer.update(self)
         #We free the memory
         self.__strategy_report__.clear()
         self.__strategy_report__ = {}
 
-    def update_report(self, time, position,
-                    position_status, portfolio: pf.AbstractPortfolio, 
-               verbose = False) -> None:
+    def update_report(self, _time: datetime, position,
+                        position_status, portfolio: pf.AbstractPortfolio,
+                        verbose = False) -> None:
         """
         Update a report
         position: Long/Short
         position_status: Enter/Exit
         portfolio: portfolio linked to the strategy
         """
-        self.__strategy_report__ [time]["Position"] = position
-        self.__strategy_report__ [time]["Position Status"] = position_status
-        self.__strategy_report__ [time]["Portfolio"] = portfolio.report()
+        self.__strategy_report__ [_time] = {}
+        self.__strategy_report__ [_time]["Position"] = position
+        self.__strategy_report__ [_time]["Position Status"] = position_status
+        self.__strategy_report__ [_time]["Portfolio"] = portfolio.get_report(_time)
 
-    def report(self, verbose = False) -> dict:
+    def get_report(self, _time: datetime=datetime.date(1970, 1, 1), verbose = False) -> dict:
         """
         Return a report of the strategy.
         it is a getter.

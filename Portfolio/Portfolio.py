@@ -51,7 +51,7 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
         """
         pass
     @abstractmethod
-    def report(self, verbose = False) -> dict:
+    def get_report(self, verbose = False) -> dict:
         """
         Create a report and Notify the observators
         """
@@ -299,7 +299,7 @@ class SeveralPortfolios(AbstractPortfolio):
         for i in range(pf_numbers):
             portfolios[i].is_key_exists(key)
 
-    def report(self, verbose = False) -> dict:
+    def get_report(self, _time: datetime, verbose = False) -> dict:
         portfolios = self.__portfolios__
         tmp_dict_pf = {}
         tmp_dict_pf["time"] = self.__timeNow__
@@ -309,7 +309,7 @@ class SeveralPortfolios(AbstractPortfolio):
         pf_numbers = len(portfolios)
         for i in range(pf_numbers):
             key = portfolios[i].get_name()
-            tmp_dict_pf[key] = portfolios[i].report()
+            tmp_dict_pf[key] = portfolios[i].get_report(_time)
         return tmp_dict_pf
 
 # leaf of share
@@ -605,17 +605,17 @@ class Portfolio(AbstractPortfolio):
 
 ####################################
 #########Observer Pattern###########
-    def report(self, verbose = False) -> dict:
+    def get_report(self, _time: datetime=datetime.date(1970, 1, 1), verbose = False) -> dict:
         children = self.__shares__
         tmp_dict = {}
         tmp_dict["TCV"] = self.__TCV__
         tmp_dict["BAL"] = self.__BAL__
         for key, _ in children.items():
-            tmp_dict[key] = children[key].report()
+            tmp_dict[key] = children[key].get_report(_time)
         return tmp_dict
 
     #test it
-    def notify(self, verbose = False) -> None:        
+    def notify(self, verbose = False) -> None:
         # tmpDict = self.report(self)
         for i in self.__observers__:
             self.__observers__[i].update(self)

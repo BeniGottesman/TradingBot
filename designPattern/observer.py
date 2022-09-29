@@ -2,6 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from random import randrange
 from typing import List
+import datetime
 
 
 class Subject(ABC):
@@ -31,7 +32,7 @@ class Subject(ABC):
         pass
 
     @abstractmethod
-    def report(self) -> dict:
+    def get_report(self, _time: datetime=datetime.date(1970, 1, 1), verbose = False) -> dict:
         """
         Return a report of the strategy
         """

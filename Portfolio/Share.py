@@ -34,8 +34,8 @@ class Share(ai.AbstractInstrument):
     def add_share_quantity(self, share_quantity: float) -> None:
         self.__number_of_shares__ += share_quantity
 
-    def report(self) -> dict:
-        return {self.__number_of_shares__, self.value()}
+    def get_report(self, _time: datetime=datetime.date(1970, 1, 1)) -> dict:
+        return {self.__number_of_shares__, self.value(_time)}
 
     # @abstractmethod
     # def updateQuotation (self, listQuotations, verbose = False) -> None:

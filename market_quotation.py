@@ -37,7 +37,7 @@ class MarketQuotation():
         tmp_df = self.__market_quotations__ [_share_name]
         tmp_df_closetime = tmp_df.index.get_level_values('Close Time')
         _quote_current_value = -123450.0
-        #Enhance the loop 
+        #Enhance the loop
         #see (2) about iloc
         if (tmp_df_closetime == time).any() : #greedy
             tmp_df = tmp_df.iloc[tmp_df_closetime == time] #greedy X2

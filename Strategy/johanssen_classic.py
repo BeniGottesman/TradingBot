@@ -10,6 +10,7 @@ import Strategy.strategy as st
 import Portfolio.share as sh
 import Portfolio.portfolio as pf
 import Portfolio.portfolio_state as pfstate
+import Strategy.statistics as stat
 import market_quotation as mq
 
 # market_quotations = mq.MarketQuotation()
@@ -20,6 +21,7 @@ class JohannsenClassic (st.Strategy):
                  _daysrollingwindow: int, _time_cycle_in_second: int,
                  _initial_investment_percentage : float, _transaction_cost: float,
                  _freezing_cycle: int, _name="generic strategy") -> None:
+        super().__init__()
         self.__time_cycle_in_second__ = _time_cycle_in_second #15mn=15*60 for instance
         self.__rollingwindowindays__ = _daysrollingwindow #=30 days for instance
         self.__rollingwindow__ = int ((60/(self.__time_cycle_in_second__/60))*24*_daysrollingwindow)
@@ -34,7 +36,9 @@ class JohannsenClassic (st.Strategy):
         self.__state__ = state.StrategyWaitToEntry()
         self.__short_strategy__ = False
         self.__freezing_cycle__ = _freezing_cycle
-
+        #Observers
+        self.st1 = stat.StatisticsViewer()
+        self.attach (self.st1)#dont forget to remove it at the end
 
     # c=0.75 -> mu +/- 0.75xsigma
     # quotation = value of the different money now
@@ -226,6 +230,7 @@ class JohannsenClassic (st.Strategy):
                 t_1 = time() #2. We measure the time taken by the algorithm
                 print("time taken = ", t_1-t_0)
                 print(my_portfolio)
+                self.notify()
                 x_axis = market.get_index(tmp_sym, 'Close Time', self.__rollingwindow__, end+1)
                 self.plot_result(x_axis, TCV)
                 break
@@ -249,12 +254,15 @@ class JohannsenClassic (st.Strategy):
                 t_1 = time() #2. We measure the time taken by the algorithm
                 print("i=", i, "time taken =", t_1-t_0)
                 # t_0 = t_1
-                print(my_portfolio)
                 self.notify()
-                if verbose and i%1000==0:
-                    tmp_sym = symbol_to_trade[0]
-                    x_axis = market.get_index(tmp_sym, 'Close Time', self.__rollingwindow__, end+1)
-                    self.plot_result(x_axis, TCV)
+                print (self.st1)
+                print (my_portfolio)
+                if verbose and i%500==0:
+                    self.st1.plot_TCV()
+                    # tmp_sym = symbol_to_trade[0]
+                    # x_axis =
+                    # market.get_index(tmp_sym, 'Close Time', self.__rollingwindow__, end+1)
+                    # self.plot_result(x_axis, TCV)
 
             i+=1
 

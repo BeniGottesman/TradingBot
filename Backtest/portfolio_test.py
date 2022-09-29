@@ -17,7 +17,7 @@ def test_portfolio () -> None :
     print(my_portfolio.get_number_of_shares())
     print("value = ", my_portfolio.value())
 
-    portfolio_report = my_portfolio.report()
+    portfolio_report = my_portfolio.get_report()
     tmp = str(portfolio_report[share_2.get_name()]).strip("{}")
     print(tmp)
 

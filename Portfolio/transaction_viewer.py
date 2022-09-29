@@ -13,7 +13,7 @@ class TransactionsViewer(obs.Observer):
         self.__transaction__ : List[dict] = []
 
     def update(self, subject: pf.AbstractPortfolio) -> None:
-        self.__transaction__.append(subject.report())
+        self.__transaction__.append(subject.get_report())
 
 class GraphTCVViewer(obs.Observer):
     def __init__(self) -> None:
@@ -30,7 +30,7 @@ class GraphTCVViewer(obs.Observer):
         plt.title('TCV Graph')
 
     def update(self, subject: pf.AbstractPortfolio) -> None:
-        report = subject.report()
+        report = subject.get_report()
         self.xs.append (report["time"]) #time
         self.TCV.append (report["BAL"])
         self.BAL.append (report["TCV"])
