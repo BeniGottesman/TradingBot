@@ -13,12 +13,14 @@
 # import Test.ScrapAndJohanssonTest as ScrapAndJohansson
 # import Test.portfolioTest as pfTest
 import Backtest.Backtest as bt
+# import Backtest.scrap_datas as bt
 
 # clienSingletonInstance = bc.client()
 # client = clienSingletonInstance.get_client()
 
 def main ():
     """Main function"""
-    bt.test_strategy()
+    bt.test_strategy ()
+    # bt.scrap_every_USDT_datas()
 
 main()

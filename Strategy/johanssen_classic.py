@@ -37,8 +37,8 @@ class JohannsenClassic (st.Strategy):
         self.__short_strategy__ = False
         self.__freezing_cycle__ = _freezing_cycle
         #Observers
-        self.st1 = stat.StatisticsViewer()
-        self.attach (self.st1)#dont forget to remove it at the end
+        self._statistics_viewer = stat.StatisticsViewer()
+        self.attach (self._statistics_viewer)#don't forget to remove it at the end
 
     # c=0.75 -> mu +/- 0.75xsigma
     # quotation = value of the different money now
@@ -49,8 +49,6 @@ class JohannsenClassic (st.Strategy):
         time_serie_size   = quotations.shape[0]
         number_of_shares  = quotations.shape[1]
         log_return = np.zeros(shape=(time_serie_size, number_of_shares))
-
-        market_quotation = mq.MarketQuotationClient().get_client()
 
         # First we compute the spread
         for i in range (number_of_shares):
@@ -69,6 +67,7 @@ class JohannsenClassic (st.Strategy):
         spread_weights = spread_weights/spread_weights[0] #normalisation with the first crypto
 
         #since the spread is wrt the log so we add this loop
+        market_quotation = mq.MarketQuotationClient().get_client()
         for i, _ in enumerate(spread_weights):
             _share_name = moneys[i]
             tmp_mq = market_quotation.\
@@ -88,11 +87,11 @@ class JohannsenClassic (st.Strategy):
         pf_state = portfolio.getState()
         if pf_state == "READY": #or # if pfState == pfstate.PortfolioIsReady():
 
-            mu_average  = np.mean (np.dot(log_return, spread_weights)) # Mean
-            sigma       = np.var (np.dot(log_return, spread_weights)) # Variance
-            sigma       = np.sqrt(sigma)
             # The Spread or Portfolio to buy see research Spread
             spread      = np.dot (log_return, spread_weights)
+            mu_average  = np.mean(spread) # Mean
+            sigma       = np.var (spread) # Variance
+            sigma       = np.sqrt(sigma)
 
             # plt.plot(spread[-30:])
             # plt.plot((mu_average-constant_std*sigma)*np.ones(30))
@@ -144,7 +143,6 @@ class JohannsenClassic (st.Strategy):
                             investment_dict[key] = - (investment_dict [key])
                     ######Short = inverse the spread#####
                         self.__backtest__.entry(time_now, investment_dict)
-                        # portfolio_value = portfolio.get_TCV()
                         portfolio.set_transaction_time(time_now)
                         portfolio_caretaker.backup(time_now)
                         self.__state__ = state.StrategyWaitToExit()
@@ -153,7 +151,7 @@ class JohannsenClassic (st.Strategy):
             elif present_strategy_state == "WaitToExit":
                 buying_value = portfolio_caretaker.get_last_buying_value()
                 portfolio_value = portfolio.get_TCV()
-                #we exit the Short strategy
+                # We exit the Short strategy
                 # if portfolio_value/buying_value > 1.1+0.0015 :
                 if spread[-1] < mu_average-constant_std*sigma and self.__short_strategy__:
                 # if spread[-1] < mu_average and self.__short_strategy__:
@@ -163,7 +161,7 @@ class JohannsenClassic (st.Strategy):
                         self.update_report(time_now,"Short","Exit", portfolio)
                         self.__short_strategy__ = False
 
-                #we exit the long strategy
+                # We exit the long strategy
                 elif spread[-1] > mu_average+constant_std*sigma and not self.__short_strategy__:
                 # elif spread[-1] > mu_average and not self.__short_strategy__:
                     if spread[-1] - spread[-2] > 0:
@@ -172,11 +170,12 @@ class JohannsenClassic (st.Strategy):
                         self.update_report(time_now,"Long","Exit", portfolio)
 
                 #Stop Loss at 5%
-                elif portfolio_value/buying_value < 0.95 and stop_loss_activated:
-                    self.__backtest__.exit(time_now)
-                    self.__state__ = state.StrategyFreeze(self.__freezing_cycle__)
-                    print ("STOP LOSS = ",time_now)
-                    self.update_report(time_now,"Stop Loss","Exit", portfolio)
+                elif portfolio_value/buying_value < 0.95:
+                    if stop_loss_activated:
+                        self.__backtest__.exit(time_now)
+                        self.__state__ = state.StrategyFreeze(self.__freezing_cycle__)
+                        print ("STOP LOSS = ",time_now)
+                        self.update_report(time_now,"Stop Loss","Exit", portfolio)
 
             # self.__state__.setState("Nothing")
             #####Hedging : If we want to buy the spread#####
@@ -219,7 +218,6 @@ class JohannsenClassic (st.Strategy):
         number_of_shares = my_portfolio.get_number_of_shares()
         nparray_quotations = np.zeros(shape=(self.__rollingwindow__, number_of_shares))
 
-        TCV = []
         t_0 = time() #1. We measure the time taken by the algorithm
         tmp_sym = symbol_to_trade[0]#it is the first symbol just to browse the df
         i=0
@@ -231,8 +229,7 @@ class JohannsenClassic (st.Strategy):
                 print("time taken = ", t_1-t_0)
                 print(my_portfolio)
                 self.notify()
-                x_axis = market.get_index(tmp_sym, 'Close Time', self.__rollingwindow__, end+1)
-                self.plot_result(x_axis, TCV)
+                self._statistics_viewer.plot_TCV()
                 break
             my_shares = my_portfolio.get_shares()
             j=0
@@ -247,31 +244,18 @@ class JohannsenClassic (st.Strategy):
             self.do_one_day (time_now, my_portfolio, portfolio_caretaker,
                             constant_std, symbol_to_trade,
                             nparray_quotations, verbose)
-            TCV.append (my_portfolio.get_TCV())
 
             verbose = True
             if verbose and i%500==0 and i > 0:
                 t_1 = time() #2. We measure the time taken by the algorithm
                 print("i=", i, "time taken =", t_1-t_0)
-                # t_0 = t_1
                 self.notify()
-                print (self.st1)
+                print (self._statistics_viewer)
                 print (my_portfolio)
-                if verbose and i%500==0:
-                    self.st1.plot_TCV()
-                    # tmp_sym = symbol_to_trade[0]
-                    # x_axis =
-                    # market.get_index(tmp_sym, 'Close Time', self.__rollingwindow__, end+1)
-                    # self.plot_result(x_axis, TCV)
+                if verbose and i%10000==0:
+                    self._statistics_viewer.plot_TCV()
 
             i+=1
-
-    def plot_result(self, x_axis, _TCV: list) -> None :
-        plt.clf()
-        plt.plot(x_axis, _TCV)
-        plt.gcf().autofmt_xdate()
-        plt.pause(0.05)
-        # input("Press Enter to continue...")
 
 
 

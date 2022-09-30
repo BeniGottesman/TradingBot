@@ -11,7 +11,7 @@ import Portfolio.portfolio as pf
 
 class StatisticsViewer(obs.Observer):
     """
-    This class provide some statistics about a strategy
+    This class display some statistics, graph ... about a strategy
     """
     def __init__(self) -> None:
         # self.__stat_data__ : List[dict] = []
@@ -67,7 +67,7 @@ class StatisticsViewer(obs.Observer):
         # tmp_report = self.__stat_data__
         # tmp_sym = symbol_to_trade[0]
         # x_axis = market.get_index(tmp_sym, 'Close Time', self.__rollingwindow__, end+1)
-        x_axis = self.__TCV__.keys ()
+        x_axis = self.__TCV__.keys () # PROBLEM TO CORRECT THERE IS A LAG IN THE DATES
         y_axis = self.__TCV__.values ()
         plt.show(block=False)
         plt.clf()

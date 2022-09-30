@@ -11,7 +11,7 @@ import enums as cst
 
 def csv_to_dataframe (file: string)->pd.DataFrame:
     """
-    Convert a csv file into a DataFrame.
+    Convert a csv file into a pickle and DataFrame.
     """
     filepkl = file.split(".")[0]+".pkl" #pickle is for reading quickly the csv
     # if not os.path.exists(filepkl):
@@ -31,7 +31,7 @@ def csv_to_dataframe (file: string)->pd.DataFrame:
 
     hist_df.set_index(['Open Time', 'Close Time'], inplace=True)
 
-    hist_df.to_pickle(filepkl)
+    hist_df.to_pickle(filepkl) #PICKLE
     os.remove(file)
 
     return hist_df

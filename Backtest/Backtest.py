@@ -80,6 +80,6 @@ def test_strategy () -> None :
                             _freezing_cycle, strategy_name)
     #mediator = med.Trading (JohannsenStrat, myPF)
 
-    constant_std = .10
+    constant_std = .50
     johannsen_strategy.do_strategy(my_portfolio, constant_std, pairs_to_trade, False)
     print("Strategy: Done.")

@@ -23,7 +23,7 @@ class Strategy(obs.Subject):
     __observers__: List[obs.Observer] = []
 
     def attach(self, observer: obs.Observer) -> None:
-        print("Subject: Attached an observer to strategy.")
+        # print("Strategy: Attached an observer to strategy.")
         self.__observers__.append(observer)
 
     def detach(self, observer: obs.Observer) -> None:
