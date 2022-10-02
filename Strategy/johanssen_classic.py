@@ -16,11 +16,14 @@ import market_quotation as mq
 # market_quotations = mq.MarketQuotation()
 
 class JohannsenClassic (st.Strategy):
-    """JohannsenClassic is a class in which we apply the Johannsen strategy."""
+    """
+    JohannsenClassic is a class in which we apply the Johannsen strategy.
+    """
     def __init__(self, portfolio: pf.Portfolio,
                  _daysrollingwindow: int, _time_cycle_in_second: int,
                  _initial_investment_percentage : float, _transaction_cost: float,
-                 _freezing_cycle: int, _name="generic strategy") -> None:
+                 _freezing_cycle: int, start_date: str, end_date: str,
+                 _name="generic strategy") -> None:
         super().__init__()
         self.__time_cycle_in_second__ = _time_cycle_in_second #15mn=15*60 for instance
         self.__rollingwindowindays__ = _daysrollingwindow #=30 days for instance
@@ -38,6 +41,8 @@ class JohannsenClassic (st.Strategy):
         self.__freezing_cycle__ = _freezing_cycle
         #Observers
         self._statistics_viewer = stat.StatisticsViewer()
+        self.__start_day__  = start_date #useless
+        self.__end_day__    = end_date #useless
         self.attach (self._statistics_viewer)#don't forget to remove it at the end
 
     # c=0.75 -> mu +/- 0.75xsigma
@@ -152,7 +157,7 @@ class JohannsenClassic (st.Strategy):
                 buying_value = portfolio_caretaker.get_last_buying_value()
                 portfolio_value = portfolio.get_TCV()
                 # We exit the Short strategy
-                # if portfolio_value/buying_value > 1.1+0.0015 :
+                # if portfolio_value/buying_value > 1.05+0.0015 :
                 if spread[-1] < mu_average-constant_std*sigma and self.__short_strategy__:
                 # if spread[-1] < mu_average and self.__short_strategy__:
                     if spread[-1] - spread[-2] < 0:
@@ -213,6 +218,9 @@ class JohannsenClassic (st.Strategy):
         market_quotation = market.get_quotation()
 
         number_of_quotations_periods = market.number_of_period()
+        if self.__rollingwindow__ >= number_of_quotations_periods:
+            print("No training time period")
+            return
 
         portfolio_caretaker = pf.PortfolioCaretaker(my_portfolio)
         number_of_shares = my_portfolio.get_number_of_shares()

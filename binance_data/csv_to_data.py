@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import string
 import sys
@@ -74,7 +75,8 @@ def csv_pair_folder_to_dataframe (pair: string,
 #add minimum time, in scrapdata
 def csv_to_dataframe_of_many_pairs (pairs: string,
                                     trading_type: string,
-                                    interval: string)->list[pd.DataFrame]:
+                                    interval: string,
+                                    start_date:string="2001-01-01", end_date:string="2030-01-01")->list[pd.DataFrame]:
     """
     Provide a list of pairs, then call CSVFolderToDataFrame() above, and
     return dict of dataframe.
@@ -84,7 +86,9 @@ def csv_to_dataframe_of_many_pairs (pairs: string,
 /*\ https://stackoverflow.com/questions/13784192/creating-an-empty-pandas-dataframe-then-filling-it
     """
     market_history_df = {}
-    minimum_date = np.datetime64("2001-01-01") #minimumDate is useful to cut every array
+    #minimumDate is useful to cut every array=2001-01-01 for instance
+    minimum_date = np.datetime64(start_date)
+    maximum_date = np.datetime64(end_date)
     #if type (pairs) != list:
     if not isinstance(pairs, list) :
         pairs = [pairs]
@@ -92,11 +96,18 @@ def csv_to_dataframe_of_many_pairs (pairs: string,
         market_history_df[pair] = csv_pair_folder_to_dataframe (pair, trading_type, interval)
         if minimum_date < market_history_df[pair].index.get_level_values('Close Time')[0]:
             minimum_date = market_history_df[pair].index.get_level_values('Close Time')[0]
+        if maximum_date > market_history_df[pair].index.get_level_values('Close Time')[-1]:
+            minimum_date = market_history_df[pair].index.get_level_values('Close Time')[-1]
     #every arrays will start with the same date.
     for pair in pairs:
+        #minimum
         market_history_df[pair] =\
             market_history_df[pair]\
                 .loc[(market_history_df[pair].index.get_level_values('Close Time') > minimum_date)]
+        #maximum
+        market_history_df[pair] =\
+            market_history_df[pair]\
+                .loc[(market_history_df[pair].index.get_level_values('Close Time') < maximum_date)]
 
     return market_history_df
 

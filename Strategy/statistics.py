@@ -47,6 +47,7 @@ class StatisticsViewer(obs.Observer):
                 self.__short__.append  (0)
                 self.__long__.append  (0)
             self.__total__ = self.__nb_long__ + self.__nb_short__
+            #Just keep once the TCV -> scale graph
             self.__TCV__[time_key] = tmp_report[time_key]["Portfolio"]["TCV"]
         self.__stat_data__.update(tmp_report) #equivalent to append for dictionnary
 
@@ -68,6 +69,7 @@ class StatisticsViewer(obs.Observer):
         # tmp_sym = symbol_to_trade[0]
         # x_axis = market.get_index(tmp_sym, 'Close Time', self.__rollingwindow__, end+1)
         x_axis = self.__TCV__.keys () # PROBLEM TO CORRECT THERE IS A LAG IN THE DATES
+        #Just keep once the TCV -> scale graph
         y_axis = self.__TCV__.values ()
         plt.show(block=False)
         plt.clf()

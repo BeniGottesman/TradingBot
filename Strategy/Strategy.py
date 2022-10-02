@@ -52,6 +52,7 @@ class Strategy(obs.Subject):
         self.__strategy_report__ [_time] = {}
         self.__strategy_report__ [_time]["Position"] = position
         self.__strategy_report__ [_time]["Position Status"] = position_status
+        #Just keep once the TCV -> scale graph
         self.__strategy_report__ [_time]["Portfolio"] = portfolio.get_report(_time)
 
     def get_report(self, _time: datetime=datetime.date(1970, 1, 1), verbose = False) -> dict:
