@@ -40,7 +40,7 @@ def test_strategy () -> None :
 
     #Another version with my selected pairs
     pairs_to_trade= {}
-    pairs_to_trade [quote_currency] = ["BTCUSDT", "ETHUSDT", "XRPUSDT", "SOLUSDT"]
+    pairs_to_trade [quote_currency] = ["BTCUSDT", "ETHUSDT", "XRPUSDT", "SOLUSDT", "ADAUSDT", "LTCUSDT", "BNBUSDT", "TRXUSDT"]
     # pairs_to_trade [quote_currency] = ["BTCUSDT", "SOLUSDT"]
     parameters_scrap["symbols"] = pairs_to_trade
     dr.retrieve_historic_from_binance_datas (parameters_scrap)
@@ -76,7 +76,7 @@ def test_strategy () -> None :
     initial_investment_percentage = 0.10
     transaction_cost = 0.0015
     strategy_name = "Test Strategy"
-    _days = 5
+    _days = 1
     _freezing_cycle = _days * (24*60/time_candle) #4 days freezing
     # number_of_quotations_periods = market.number_of_period()
     johannsen_strategy = jo.JohannsenClassic(my_portfolio,
@@ -86,6 +86,6 @@ def test_strategy () -> None :
                             strategy_name)
     #mediator = med.Trading (JohannsenStrat, myPF)
 
-    constant_std = 1.5
+    constant_std = 1.
     johannsen_strategy.do_strategy(my_portfolio, constant_std, pairs_to_trade, False)
     print("Strategy: Done.")

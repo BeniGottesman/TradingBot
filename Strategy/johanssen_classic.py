@@ -128,7 +128,7 @@ class JohannsenClassic (st.Strategy):
 
                 #we start the Long strategy
                 if spread[-1] < mu_average-constant_std*sigma:
-                    if spread[-1] - spread[-2] > 0:
+                    # if spread[-1] - spread[-2] > 0:
                     # key = list(investment_dict)[0]
                     # investment_dict [key] = +investment_dict [key]
                     # for key in list(investment_dict)[1:]:
@@ -140,7 +140,7 @@ class JohannsenClassic (st.Strategy):
                         self.update_report(time_now,"Long","Enter", portfolio)
                  #we start the Short strategy
                 elif spread[-1] > mu_average+constant_std*sigma:
-                    if spread[-1] - spread[-2] < 0:
+                    # if spread[-1] - spread[-2] < 0:
                     #####Short = inverse the spread#####
                         key = list(investment_dict)[0]
                         investment_dict [key] = - (investment_dict [key])
@@ -158,18 +158,18 @@ class JohannsenClassic (st.Strategy):
                 portfolio_value = portfolio.get_TCV()
                 # We exit the Short strategy
                 # if portfolio_value/buying_value > 1.05+0.0015 :
-                if spread[-1] < mu_average-constant_std*sigma and self.__short_strategy__:
+                if spread[-1] < mu_average:#-constant_std*sigma and self.__short_strategy__:
                 # if spread[-1] < mu_average and self.__short_strategy__:
-                    if spread[-1] - spread[-2] < 0:
+                    # if spread[-1] - spread[-2] < 0:
                         self.__backtest__.exit(time_now)
                         self.__state__ = state.StrategyWaitToEntry()
                         self.update_report(time_now,"Short","Exit", portfolio)
                         self.__short_strategy__ = False
 
                 # We exit the long strategy
-                elif spread[-1] > mu_average+constant_std*sigma and not self.__short_strategy__:
+                elif spread[-1] > mu_average:#+constant_std*sigma and not self.__short_strategy__:
                 # elif spread[-1] > mu_average and not self.__short_strategy__:
-                    if spread[-1] - spread[-2] > 0:
+                    # if spread[-1] - spread[-2] > 0:
                         self.__backtest__.exit(time_now)
                         self.__state__ = state.StrategyWaitToEntry()
                         self.update_report(time_now,"Long","Exit", portfolio)
@@ -181,6 +181,11 @@ class JohannsenClassic (st.Strategy):
                         self.__state__ = state.StrategyFreeze(self.__freezing_cycle__)
                         print ("STOP LOSS = ",time_now)
                         self.update_report(time_now,"Stop Loss","Exit", portfolio)
+
+                #We freeze if we exit without arbitrage
+                if self.__state__.get_state() == "WaitToEntry"\
+                     and portfolio_value/buying_value < 1.:
+                    self.__state__ = state.StrategyFreeze(self.__freezing_cycle__)
 
             # self.__state__.setState("Nothing")
             #####Hedging : If we want to buy the spread#####
