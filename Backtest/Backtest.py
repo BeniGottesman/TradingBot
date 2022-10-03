@@ -19,7 +19,7 @@ def test_strategy () -> None :
     # Scrap w.r.t. the volume
     # check_crypto_volume = {}
     # check_crypto_volume[quote_currency] = 7500000000
-    start_date = "2020-01"
+    start_date = "2020-06"
     end_date = "2022-08"
     parameters_scrap = {"folder": cst.ROOT_DIR,
                    "years": cst.YEARS, "months": [1,2,3,4,5,6,7,8,9,10,11,12],
@@ -40,7 +40,8 @@ def test_strategy () -> None :
 
     #Another version with my selected pairs
     pairs_to_trade= {}
-    pairs_to_trade [quote_currency] = ["BTCUSDT", "ETHUSDT", "XRPUSDT", "SOLUSDT", "ADAUSDT", "LTCUSDT", "BNBUSDT", "TRXUSDT"]
+    pairs_to_trade [quote_currency] =\
+        ["BTCUSDT", "ETHUSDT", "XRPUSDT", "SOLUSDT", "ADAUSDT", "LTCUSDT", "BNBUSDT", "TRXUSDT"]
     # pairs_to_trade [quote_currency] = ["BTCUSDT", "SOLUSDT"]
     parameters_scrap["symbols"] = pairs_to_trade
     dr.retrieve_historic_from_binance_datas (parameters_scrap)
