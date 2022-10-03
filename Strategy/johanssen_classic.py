@@ -107,7 +107,7 @@ class JohannsenClassic (st.Strategy):
             stop_loss_activated = True
             if present_strategy_state == "WaitToEntry":
                 alpha=1
-                my_money = portfolio.get_BAL ()# Amount of money in USDT I  actually hold in my pf
+                my_money = portfolio.get_BAL ()# Amount of money in USDT I actually hold in my pf
                 if my_money>0:
                     alpha  = (spread_weights * quotations[time_serie_size-1,:]) / my_money
                     how_much_to_invest_weights = spread_weights/alpha
@@ -115,6 +115,7 @@ class JohannsenClassic (st.Strategy):
                 else:
                     print("WARNING : my_money<=0\n")
                     how_much_to_invest_weights = np.array ([-1234 for key in moneys])
+                    return
 
                 investment_dict={}
 
@@ -153,13 +154,14 @@ class JohannsenClassic (st.Strategy):
                         self.__state__ = state.StrategyWaitToExit()
                         self.update_report(time_now,"Short","Enter", portfolio)
                         self.__short_strategy__ = True
+
+            #Wait to exit the strategy
             elif present_strategy_state == "WaitToExit":
                 buying_value = portfolio_caretaker.get_last_buying_value()
                 portfolio_value = portfolio.get_TCV()
                 # We exit the Short strategy
                 # if portfolio_value/buying_value > 1.05+0.0015 :
-                if spread[-1] < mu_average:#-constant_std*sigma and self.__short_strategy__:
-                # if spread[-1] < mu_average and self.__short_strategy__:
+                if spread[-1] < mu_average and self.__short_strategy__:
                     # if spread[-1] - spread[-2] < 0:
                         self.__backtest__.exit(time_now)
                         self.__state__ = state.StrategyWaitToEntry()
@@ -167,8 +169,7 @@ class JohannsenClassic (st.Strategy):
                         self.__short_strategy__ = False
 
                 # We exit the long strategy
-                elif spread[-1] > mu_average:#+constant_std*sigma and not self.__short_strategy__:
-                # elif spread[-1] > mu_average and not self.__short_strategy__:
+                elif spread[-1] > mu_average and not self.__short_strategy__:
                     # if spread[-1] - spread[-2] > 0:
                         self.__backtest__.exit(time_now)
                         self.__state__ = state.StrategyWaitToEntry()

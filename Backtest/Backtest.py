@@ -87,6 +87,6 @@ def test_strategy () -> None :
                             strategy_name)
     #mediator = med.Trading (JohannsenStrat, myPF)
 
-    constant_std = 1.
+    constant_std = 1.5
     johannsen_strategy.do_strategy(my_portfolio, constant_std, pairs_to_trade, False)
     print("Strategy: Done.")
