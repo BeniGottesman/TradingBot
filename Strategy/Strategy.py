@@ -8,8 +8,9 @@ import designPattern.observer as obs
 
 
 class Strategy(obs.Subject):
-    def __init__(self):
+    def __init__(self, portfolio: pf.Portfolio):
         self.__strategy_report__ = {}
+        self.__backtest_command__ = BacktestCommand(portfolio)
 
     @abstractmethod
     def do_strategy(self, portfolio: pf.AbstractPortfolio, data: List, verbose = False):
@@ -64,6 +65,17 @@ class Strategy(obs.Subject):
     #########Observer Pattern#########
     ##################################
 
+    #################################
+    #########Command Pattern#########
+    @abstractmethod
+    def entry(self, time: datetime, list_investments: dict, verbose = False) -> None:
+        self.__backtest_command__.entry (time, list_investments)
+
+    @abstractmethod
+    def exit(self, time: datetime, verbose = False) -> None:
+        self.__backtest_command__.exit (time)
+    #########Command Pattern#########
+    #################################
 
 ######################################
 #We implement a command pattern to make the mediation

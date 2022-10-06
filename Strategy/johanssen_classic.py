@@ -24,12 +24,11 @@ class JohannsenClassic (st.Strategy):
                  _initial_investment_percentage : float, _transaction_cost: float,
                  _freezing_cycle: int, start_date: str, end_date: str,
                  _name="generic strategy") -> None:
-        super().__init__()
+        super().__init__(portfolio)
         self.__time_cycle_in_second__ = _time_cycle_in_second #15mn=15*60 for instance
         self.__rollingwindowindays__ = _daysrollingwindow #=30 days for instance
         self.__rollingwindow__ = int ((60/(self.__time_cycle_in_second__/60))*24*_daysrollingwindow)
         self.__transaction_cost__ = _transaction_cost
-        self.__backtest__ = st.BacktestCommand(portfolio)
         if _initial_investment_percentage > 1 or _initial_investment_percentage < 0:
             print('error JohannsenClassic: _initial_investment_percentage')
             sys.exit()
@@ -134,7 +133,7 @@ class JohannsenClassic (st.Strategy):
                     # investment_dict [key] = +investment_dict [key]
                     # for key in list(investment_dict)[1:]:
                     #     investment_dict[key] = -investment_dict[key]
-                        self.__backtest__.entry(time_now, investment_dict)
+                        self.__backtest_command__.entry(time_now, investment_dict)
                         portfolio.set_transaction_time(time_now)
                         portfolio_caretaker.backup(time_now)
                         self.__state__ = state.StrategyWaitToExit()
@@ -148,7 +147,7 @@ class JohannsenClassic (st.Strategy):
                         for key in list(investment_dict)[1:]:
                             investment_dict[key] = - (investment_dict [key])
                     ######Short = inverse the spread#####
-                        self.__backtest__.entry(time_now, investment_dict)
+                        self.__backtest_command__.entry(time_now, investment_dict)
                         portfolio.set_transaction_time(time_now)
                         portfolio_caretaker.backup(time_now)
                         self.__state__ = state.StrategyWaitToExit()
@@ -163,7 +162,7 @@ class JohannsenClassic (st.Strategy):
                 # if portfolio_value/buying_value > 1.05+0.0015 :
                 if spread[-1] < mu_average and self.__short_strategy__:
                     # if spread[-1] - spread[-2] < 0:
-                        self.__backtest__.exit(time_now)
+                        self.__backtest_command__.exit(time_now)
                         self.__state__ = state.StrategyWaitToEntry()
                         self.update_report(time_now,"Short","Exit", portfolio)
                         self.__short_strategy__ = False
@@ -171,14 +170,14 @@ class JohannsenClassic (st.Strategy):
                 # We exit the long strategy
                 elif spread[-1] > mu_average and not self.__short_strategy__:
                     # if spread[-1] - spread[-2] > 0:
-                        self.__backtest__.exit(time_now)
+                        self.__backtest_command__.exit(time_now)
                         self.__state__ = state.StrategyWaitToEntry()
                         self.update_report(time_now,"Long","Exit", portfolio)
 
                 #Stop Loss at 5%
                 elif portfolio_value/buying_value < 0.95:
                     if stop_loss_activated:
-                        self.__backtest__.exit(time_now)
+                        self.__backtest_command__.exit(time_now)
                         self.__state__ = state.StrategyFreeze(self.__freezing_cycle__)
                         print ("STOP LOSS = ",time_now)
                         self.update_report(time_now,"Stop Loss","Exit", portfolio)

@@ -56,7 +56,8 @@ class StrategyFreeze (StrategyState):
         return "Freeze"
 
     def my_state_is (self) -> None:
-        print ("Strategy : has been Frozen")
+        cycle = self.__cycle_counter__
+        print ("Strategy : has been Frozen for ",cycle," cycle")
 
     def get_state (self) -> str:
         return "Freeze"
