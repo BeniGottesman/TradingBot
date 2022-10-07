@@ -183,7 +183,7 @@ class JohannsenClassic (st.Strategy):
 
                 #We freeze if we exit without arbitrage
                 if self.get_state() == "WaitToEntry"\
-                     and portfolio_value/buying_value < 1.0015:
+                     and portfolio_value/buying_value < 1 + self.__transaction_cost__:
                     self.change_state (state.StrategyFreeze(self, self._freezing_cycle))
 
             # self.__state__.setState("Nothing")
