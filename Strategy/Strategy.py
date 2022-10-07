@@ -1,23 +1,54 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 import datetime
+from tkinter.messagebox import NO
 from typing import List
+
+import Strategy.command as btcmd
 import Portfolio.portfolio as pf
 import Portfolio.portfolio_state as pfstate
+import Strategy.strategy_state as strategy_state
 import designPattern.observer as obs
-
+import Strategy.statistics as stat
 
 class Strategy(obs.Subject):
-    def __init__(self, portfolio: pf.Portfolio):
+    def __init__(self, portfolio: pf.Portfolio, _freezing_cycle: int,
+                _initial_investment_percentage: float, stop_loss_activated: bool):
         self.__strategy_report__ = {}
-        self.__backtest_command__ = BacktestCommand(portfolio)
+        self.__backtest_command__ = btcmd.BacktestCommand(portfolio)
+        self._state = strategy_state.StrategyWaitToEntry()
+        self._short_strategy = False
+        #How many cycle do I freeze the strategy ?
+        self._freezing_cycle = _freezing_cycle
+        #initial_investment_percentage=This variable is 1 i.e. not used yet
+        #i.e. 0.2% of the capital for instance
+        self._initial_investment_percentage = _initial_investment_percentage
+        self._stop_loss_activated = stop_loss_activated
+        #Observers
+        self._statistics_viewer = stat.StatisticsViewer()
+        self.attach (self._statistics_viewer)#don't forget to remove it at the end
 
     @abstractmethod
-    def do_strategy(self, portfolio: pf.AbstractPortfolio, data: List, verbose = False):
+    def do_strategy(self, constant_std: float, data: List, verbose = False):
         """
         Start the strategy.
         """
         pass
+
+    ###############################
+    #########State Pattern#########
+    def change_state (self, _state: strategy_state) -> None :
+        self._state = _state
+    def get_state (self)-> str :
+        return self._state.get_state()
+
+    def freeze (self) -> None :
+        self._state.freeze (self, )
+    #########State Pattern#########
+    ###############################
+
+    def get_portfolio(self) -> pf.Portfolio:
+        return self.__backtest_command__.get_portfolio()
 
     ##################################
     #########Observer Pattern#########
@@ -76,130 +107,3 @@ class Strategy(obs.Subject):
         self.__backtest_command__.exit (time)
     #########Command Pattern#########
     #################################
-
-######################################
-#We implement a command pattern to make the mediation
-#Between strategy and portfolio
-class StrategyCommandPortfolio(ABC):
-    def __init__(self, portfolio: pf.AbstractPortfolio) -> None:
-        #we command the portfolio from strategy
-        self._portfolio = portfolio
-
-    @property#=getPf=getter
-    def portfolio(self) -> pf.Portfolio:
-        '''
-        Getter = Return the portfolio attached to the strategy
-        '''
-        return self._portfolio
-
-    @portfolio.setter#=setPf
-    def portfolio(self, portfolio: pf.Portfolio) -> None:
-        self._pf = portfolio
-
-    @abstractmethod
-    def entry(self, time: datetime, list_investments: dict, verbose = False) -> None:
-        pass
-
-    @abstractmethod
-    def exit(self, time: datetime, verbose = False) -> None:
-        pass
-
-
-class BacktestCommand(StrategyCommandPortfolio):
-    #Useless
-    # def __init__(self, portfolio: pf.AbstractPortfolio) -> None:
-    #     super().__init__(portfolio)
-
-
-    def entry(self, time: datetime, list_investments: dict, verbose = False) -> None:
-        if verbose:
-            print("We entry the strat.")
-
-        tmp_balance = self._portfolio.get_BAL()
-        if tmp_balance < 0:
-            if self.portfolio.getState() != "STOPPED":
-                self.portfolio.set_state(pfstate.PortfolioIsStopped())# PROBLEM
-            print("No money in BAL = "+str(tmp_balance))
-            return
-
-        # tmp = 0.
-        for key, quantity in list_investments.items(): #self.pf._children
-            if not self.portfolio.is_key_exists(key):
-                new_share = pf.Share(key, quantity)#(key, quantity, time)
-                self.portfolio.add_share(new_share)
-            else:
-                # child.addShareQuantity(time, quantity) and add to a dict
-                share = self.portfolio.get_share(key)
-                share.add_share_quantity(quantity)
-                #the long (+) are substracted
-                #the short (-) are added to the BAL
-                tmp_balance -= (self.portfolio.get_share(key).value(time))
-            # if quantity < 0:
-            #     tmp_balance += (self.pf.get_share(key).value(time))
-            # else :
-            #     tmp_balance -= (self.pf.get_share(key).value(time))
-
-        # tmp_balance = self._portfolio.get_BAL() - tmp_balance
-        self.portfolio.set_BAL(tmp_balance)
-        self.portfolio.update_portfolio(time)
-        self.portfolio.notify()#each time we notify we send the pf
-
-    def exit(self, time: datetime, verbose = False) -> None:
-        """
-        Here, when we exit, we release every shares.
-        """
-        if verbose:
-            print("We exit the strat.")
-
-        # tmp_balance = 0
-        tmp_portfolio_value = self.portfolio.value(time)
-        shares = self.portfolio.get_shares()
-        for key in shares.keys():
-            # We release every shares
-            shares[key].set_share_quantity(0)
-
-        #Then we update the portfolio
-        self.portfolio.set_TCV (tmp_portfolio_value)
-        self.portfolio.set_BAL (tmp_portfolio_value)
-        # self.pf.update_portfolio(time)
-
-        #ATTENTION CHECK IF IT IS GOOD
-        self.portfolio.set_state(pfstate.PortfolioIsReady())
-        self.portfolio.notify()#my state is now to position closed
-
-
-# #Exemple of use
-# class Context():
-#     """
-#     The Context defines the interface of interest to clients.
-#     """
-
-#     def __init__(self, strategy: Strategy) -> None:
-#         self._strategy = strategy
-
-#     @property
-#     def strategy(self) -> Strategy:
-#         return self._strategy
-
-#     @strategy.setter
-#     def strategy(self, strategy: Strategy) -> None:
-#         self._strategy = strategy
-
-#     def do_some_business_logic(self) -> None:
-#         print("Context: Sorting data using the strategy (not sure how it'll do it)")
-#         result = self._strategy.do_algorithm(["a", "b", "c", "d", "e"])
-#         print(",".join(result))
-
-# if __name__ == "__main__":
-#     # The client code picks a concrete strategy and passes it to the context.
-#     # The client should be aware of the differences between strategies in order
-#     # to make the right choice.
-
-#     context = Context(doAlgorithm())
-#     print("Client: Strategy is set to normal sorting.")
-#     context.do_some_business_logic()
-#     print()
-
-#     print("Client: Strategy is set to reverse sorting.")
-#     context.strategy = ConcreteStrategyB()
-#     context.do_some_business_logic()

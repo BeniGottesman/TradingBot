@@ -60,7 +60,7 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
     ##################################
 
     @abstractmethod
-    def getWeightArrayOfShares (self) -> np.array:
+    def get_weight_array_of_shares (self) -> np.array:
         """
         Return an np.array containing the number of shares
         """
@@ -81,7 +81,7 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
 
 
     @abstractmethod
-    def restore_state(self, memento: memento) -> None:
+    def restore_state(self, mem: memento) -> None:
         """
         Restores the Originator's state from a memento object.
         """
@@ -123,6 +123,9 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
     def add_capital(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
         pass
     @abstractmethod
+    def remove_capital(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
+        pass
+    @abstractmethod
     def is_capital_available(self, time: datetime=datetime.date(1970, 1, 1)) -> Bool:
         pass
     @abstractmethod
@@ -161,11 +164,11 @@ class SeveralPortfolios(AbstractPortfolio):
             state_portfolios [portfolio.get_name()] = portfolio.generate_state_data(portfolio)
         return state_portfolios
 
-    def restore_state(self, memento: memento) -> None:
+    def restore_state(self, mem: memento) -> None:
         """
         Restores the Originator's state from a memento object.
         """
-        my_portfolios_state = memento.get_state()#retutrn a dictionary
+        my_portfolios_state = mem.get_state()#retutrn a dictionary
         my_portfolios       = self.__portfolios__
         #it is a list it is preferable to browse/loop it with an index i=0..n
         for portfolio in my_portfolios:
@@ -204,10 +207,10 @@ class SeveralPortfolios(AbstractPortfolio):
     ####TCV getter setter####
     #########################
 
-    def getWeightArrayOfShares (self) -> np.array:
+    def get_weight_array_of_shares (self) -> np.array:
         tmp_array = [] #np.array()
         for portfolio in self.__portfolios__:
-            tmp_array = np.append(tmp_array, portfolio.getWeightArrayOfShares())
+            tmp_array = np.append(tmp_array, portfolio.get_weight_array_of_shares())
         return tmp_array
 
     #########################
@@ -264,6 +267,15 @@ class SeveralPortfolios(AbstractPortfolio):
             _p = percentage[pf_name]
             portfolio.add_capital(_p, time)
 
+    def remove_capital(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
+        """
+        remove Capital from balance
+        """
+        for portfolio in self.__portfolios__:
+            pf_name = portfolio.get_name()
+            _p = percentage[pf_name]
+            portfolio.remove_capital(_p, time)
+
     def how_much_capital_invested_in_percentage(self,
                                                 time: datetime=datetime.date(1970, 1, 1))-> float:
         """
@@ -275,9 +287,9 @@ class SeveralPortfolios(AbstractPortfolio):
 #########Capital functions##########
 ####################################
 
-
     def is_composite (self) -> bool:
-        return True
+        # It is not a composite it is several portfolio
+        return False
 
     def notify(self, verbose = False) -> None:
         if verbose:
@@ -334,11 +346,11 @@ class Portfolio(AbstractPortfolio):
     def set_state(self, _state: state.State) -> None:
         self.__state__ = _state
 
-    def presentState(self) -> None: #toString
+    def present_state(self) -> None: #toString
         state_name = self.__state__#string overload operator
         print(f"Portfolio is in {state_name}")
 
-    def getState (self) -> str:
+    def get_state (self) -> str:
         return self.__state__.get_state()
 ##########################PF STATE###########################
 #############################################################
@@ -411,6 +423,20 @@ class Portfolio(AbstractPortfolio):
             return
         amount_to_invest = capital * percentage
         self.add_BAL(amount_to_invest)
+
+    def remove_capital(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
+        """
+        remove Capital from balance
+        """
+        capital = self.get_capital(time)
+        if capital < 0:
+            print ("add_capital(): No capital Available to invest more")
+            return
+        if percentage > 1 or percentage < 0:
+            print ("add_capital(): p=", percentage, "% Need to be between 0 and 1")
+            return
+        amount_to_remove = - capital * percentage
+        self.add_BAL(amount_to_remove)
 
     def how_much_capital_invested_in_percentage(self,
                                                 time: datetime=datetime.date(1970, 1, 1))-> float:
@@ -512,7 +538,7 @@ class Portfolio(AbstractPortfolio):
         _share.parent = None #?
         self.__number_of_shares__ -= 1
 
-    def getWeightArrayOfShares (self) -> np.array:
+    def get_weight_array_of_shares (self) -> np.array:
         tmp_array = [] #np.array()
         my_shares = self.__shares__
         for _, this_share in my_shares.items():
@@ -593,15 +619,6 @@ class Portfolio(AbstractPortfolio):
 
     def set_transaction_time (self, time) -> None:
         self.__time_last_transaction__ = time
-
-    #Update the quote value of the pairs
-    #DEPRECATED
-    #def updateMarketQuotation(self, time: datetime, listQuotations: dict, verbose = False) -> None:
-    #     self.__timeLastTransaction__ = time
-    #     children = self.__Shares__
-    #     for key in listQuotations: #self.pf._children
-    #         if key in children:
-    #             children[key].updateMarketQuotation(time, listQuotations[key])
 
 ####################################
 #########Observer Pattern###########

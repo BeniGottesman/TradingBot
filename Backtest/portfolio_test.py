@@ -21,5 +21,5 @@ def test_portfolio () -> None :
     tmp = str(portfolio_report[share_2.get_name()]).strip("{}")
     print(tmp)
 
-    my_portfolio.presentState()
+    my_portfolio.present_state()
     

@@ -11,9 +11,9 @@ import market_quotation as mq
 
 def test_strategy () -> None :
     quote_currency = "USDT"
-    portfolio_name = "test portfolio"
-    starting_money = 1000.0
-    my_portfolio = pf.Portfolio(quote_currency, portfolio_name, starting_money)
+    # portfolio_name = "test portfolio"
+    # starting_money = 1000.0
+    # my_portfolio = pf.Portfolio(quote_currency, portfolio_name, starting_money)
 
     # reference_pair = 'BTCUSDT'
     # Scrap w.r.t. the volume
@@ -60,16 +60,12 @@ def test_strategy () -> None :
     # test.get_client().set_quotations(market_quotations)
     print("To dataframe: Done.")
 
-    #We create a new portfolio = 0 with the shares we will trade with
-    for key in market_quotations:
-        my_portfolio.add_share(sh.CryptoCurrency(key))
-
-    #Portfolio Response test
-    # print(my_portfolio.get_number_of_shares())
-    # print(my_portfolio)
-    # my_portfolio.presentState()
-
     print("Strategy: Start.")
+    #Shares to trade
+    _shares = []
+    for key in market_quotations:
+        _shares.append(key)
+
     #Parameters for johanssen Strategy
     time_candle = 15
     days_rolling_window = 300
@@ -79,14 +75,29 @@ def test_strategy () -> None :
     strategy_name = "Test Strategy"
     _days = 1
     _freezing_cycle = _days * (24*60/time_candle) #4 days freezing
+    stop_loss_activated = False
+    parameters_strategy = {
+            "starting money": 1000,
+            "portfolio name": "test Joahnsen portfolio",
+            "quote currency": "USDT",
+            "time candle": time_candle,
+            "shares": _shares,
+            "days rolling window": days_rolling_window,
+            "time cycle in second": time_cycle_in_second,
+            "initial investment percentage": initial_investment_percentage,
+            "transaction cost": transaction_cost,
+            "strategy name": strategy_name, "freezing cycle": _freezing_cycle,
+            "stop loss activated": stop_loss_activated,
+            "start date": start_date, "end date": end_date}
+    johannsen_strategy = jo.JohannsenClassic(parameters_strategy)
     # number_of_quotations_periods = market.number_of_period()
-    johannsen_strategy = jo.JohannsenClassic(my_portfolio,
-                            days_rolling_window, time_cycle_in_second,
-                            initial_investment_percentage, transaction_cost,
-                            _freezing_cycle, start_date, end_date,
-                            strategy_name)
-    #mediator = med.Trading (JohannsenStrat, myPF)
+    # johannsen_strategy = jo.JohannsenClassic(_shares,
+    #                         days_rolling_window, time_cycle_in_second,
+    #                         initial_investment_percentage, transaction_cost,
+    #                         _freezing_cycle, stop_loss_activated,
+    #                         start_date, end_date,
+    #                         strategy_name)
 
     constant_std = 1.5
-    johannsen_strategy.do_strategy(my_portfolio, constant_std, pairs_to_trade, False)
+    johannsen_strategy.do_strategy(constant_std, pairs_to_trade, False)
     print("Strategy: Done.")
