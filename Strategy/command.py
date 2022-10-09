@@ -22,8 +22,8 @@ class StrategyCommandPortfolio(ABC):
         return self._portfolio
 
     @get_portfolio.setter#=setPf
-    def get_portfolio(self, portfolio: pf.Portfolio) -> None:
-        self._pf = portfolio
+    def set_portfolio(self, portfolio: pf.Portfolio) -> None:
+        self._portfolio = portfolio
 
     @abstractmethod
     def entry(self, time: datetime, list_investments: dict, verbose = False) -> None:
@@ -40,7 +40,8 @@ class BacktestCommand(StrategyCommandPortfolio):
     #     super().__init__(portfolio)
 
 
-    def entry(self, time: datetime, list_investments: dict, verbose = False) -> None:
+    def entry(self, time: datetime, list_investments: dict,\
+              transaction_cost: float, verbose = False) -> None:
         if verbose:
             print("We entry the strat.")
 
@@ -69,11 +70,11 @@ class BacktestCommand(StrategyCommandPortfolio):
             #     tmp_balance -= (self.pf.get_share(key).value(time))
 
         # tmp_balance = self._portfolio.get_BAL() - tmp_balance
-        self.get_portfolio.set_BAL(tmp_balance)
+        self.get_portfolio.set_BAL(tmp_balance - transaction_cost)
         self.get_portfolio.update_portfolio(time)
         self.get_portfolio.notify()#each time we notify we send the pf
 
-    def exit(self, time: datetime, verbose = False) -> None:
+    def exit(self, time: datetime, transaction_cost: float, verbose = False) -> None:
         """
         Here, when we exit, we release every shares.
         """
@@ -81,20 +82,23 @@ class BacktestCommand(StrategyCommandPortfolio):
             print("We exit the strat.")
 
         # tmp_balance = 0
-        tmp_portfolio_value = self.get_portfolio.value(time)
-        shares = self.get_portfolio.get_shares()
+        my_portfolio = self.get_portfolio
+        tmp_portfolio_value = my_portfolio.value(time)
+        shares = my_portfolio.get_shares()
+        # tmp_sum_transaction_cost = 0.0
         for key in shares.keys():
+            # tmp_sum_transaction_cost += abs(shares[key].value(time))*transaction_cost
             # We release every shares
             shares[key].set_share_quantity(0)
 
         #Then we update the portfolio
-        self.get_portfolio.set_TCV (tmp_portfolio_value)
-        self.get_portfolio.set_BAL (tmp_portfolio_value)
+        my_portfolio.set_TCV (tmp_portfolio_value - transaction_cost)
+        my_portfolio.set_BAL (tmp_portfolio_value - transaction_cost)
         # self.pf.update_portfolio(time)
 
         #ATTENTION CHECK IF IT IS GOOD
-        self.get_portfolio.set_state(pfstate.PortfolioIsReady())
-        self.get_portfolio.notify()#my state is now to position closed
+        my_portfolio.set_state(pfstate.PortfolioIsReady())
+        my_portfolio.notify()#my state is now to position closed
 
 
 # #Exemple of use

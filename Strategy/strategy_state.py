@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from datetime import datetime
-import strategy as strat
+import Strategy.strategy as strat
 import designPattern.state as st
 # import Portfolio.Portfolio as pf
 
@@ -16,10 +16,20 @@ class StrategyState(st.StateAbstract):
 
     @abstractmethod
     def get_state (self) -> str:
+        return self
+
+    def state_of_strategy (self) -> str:
         """
         Return a string containing the state.
         """
         pass
+
+
+    @abstractmethod
+    def __eq__(self, str_other: str):
+        if self.state_of_strategy() == str_other:
+            return True
+        return False
 
     @abstractmethod
     def my_state_is (self) -> None:
@@ -34,7 +44,7 @@ class StrategyState(st.StateAbstract):
         pass
 
     @abstractmethod
-    def trailing_buy(self, time_now:datetime, investment_dict) -> None :
+    def trailing_buy(self, time_now:datetime, investment_dict, transaction_cost) -> None :
         pass
     @abstractmethod
     def trailing_sell(self, time:datetime) -> None :
@@ -46,6 +56,11 @@ class StrategyState(st.StateAbstract):
     def rebalance(self, time:datetime) -> None : #hedging
         pass
 
+    __short_strategy__ = False
+    def is_strategy_short (self) -> bool :
+        return self.__short_strategy__
+    def set_strategy_short (self, _b: bool):
+        self.__short_strategy__ = _b
 
 class StrategyWaitToEntry (StrategyState): #== Strategy is Ready
     def __str__(self):
@@ -54,16 +69,16 @@ class StrategyWaitToEntry (StrategyState): #== Strategy is Ready
     def my_state_is (self) -> None:
         print ("Strategy : Wait for an entry Signal")
 
-    def get_state (self) -> str:
+    def state_of_strategy (self) -> str:
         return "WaitToEntry"
 
     def freeze (self, _time_cycle: int) -> None :
         self.__strategy__.change_state(StrategyFreeze(_time_cycle))
 
-    def trailing_buy(self, time_now, investment_dict) -> None :
-        self.__strategy__ .entry(time_now, investment_dict)
+    def trailing_buy(self, time_now, investment_dict, transaction_cost) -> None :
+        self.__strategy__ .entry(time_now, investment_dict, transaction_cost)
         return
-    def trailing_sell(self, time:datetime) -> None :
+    def trailing_sell(self, time:datetime, transaction_cost: float) -> None :
         return
     def trailing_stop(self, time:datetime) -> None :
         return
@@ -77,23 +92,24 @@ class StrategyWaitToExit (StrategyState):
     def my_state_is (self) -> None:
         print ("Strategy : Wait for an exit Signal")
 
-    def get_state (self) -> str:
+    def state_of_strategy (self) -> str:
         return "WaitToExit"
 
     def freeze (self, _time_cycle: int) -> None :
         self.__strategy__.change_state(StrategyFreeze(_time_cycle))
 
-    def trailing_buy(self, time_now:datetime, investment_dict) -> None :
+    def trailing_buy(self, time_now:datetime, investment_dict, transaction_cost) -> None :
         return
-    def trailing_sell(self, time: datetime) -> None :
-        self.__strategy__.exit(time)
+    def trailing_sell(self, time: datetime, transaction_cost: float) -> None :
+        self.__strategy__.exit(time, transaction_cost)
     def trailing_stop(self, time:datetime) -> None :
         return
     def rebalance(self, time:datetime) -> None : #hedging
         return
 
 class StrategyFreeze (StrategyState):
-    def __init__(self, _freeze_time_: int):
+    def __init__(self, strategy: strat.Strategy, _freeze_time_: int):
+        super().__init__(strategy)
         self.__freeze_time__ = _freeze_time_
         self.__cycle_counter__ = 0
 
@@ -104,7 +120,7 @@ class StrategyFreeze (StrategyState):
         cycle = self.__cycle_counter__
         print ("Strategy : has been Frozen for ",cycle," cycle")
 
-    def get_state (self) -> str:
+    def state_of_strategy (self) -> str:
         return "Freeze"
 
     def get_counter(self) -> int:
@@ -120,11 +136,15 @@ class StrategyFreeze (StrategyState):
     def freeze (self, _time_cycle: int) -> None :
         return
 
-    def trailing_buy(self, time_now:datetime, investment_dict) -> None :
+    def trailing_buy(self, time_now:datetime, investment_dict, transaction_cost) -> None :
         return
-    def trailing_sell(self, time:datetime) -> None :
+    def trailing_sell(self, time:datetime, transaction_cost: float) -> None :
         return
     def trailing_stop(self, time:datetime) -> None :
         return
     def rebalance(self, time:datetime) -> None : #hedging
         return
+
+    def is_strategy_short (self) -> bool :
+        self.short_strategy = False
+        return self.short_strategy

@@ -105,7 +105,7 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
     def get_BAL(self) -> float:
         pass
     @abstractmethod
-    def set_BAL(self, value: float) -> None:
+    def set_BAL(self, value: float, transaction_value:float) -> None:
         pass
     @abstractmethod
     def add_BAL(self, value: float) -> None:
@@ -222,10 +222,10 @@ class SeveralPortfolios(AbstractPortfolio):
         return tmp_BAL
     # WARNING WHEN USE IT
     #LA TCV EVOLUE INDEPENDEMMENT DE LA BAL
-    def set_BAL(self, value: float) -> None:
-        if value > self.get_TCV():#SAUF CAS PARTICULIER OU BAL>TCV ...
-            self.__BAL__ = value
-        self.__BAL__ = value
+    def set_BAL(self, value: float, transaction_value:float=0.0) -> None:
+        # if value-transaction_value > self.get_TCV():#SAUF CAS PARTICULIER OU BAL>TCV ...
+        #     self.__BAL__ = self.get_TCV()-transaction_value
+        self.__BAL__ = value-transaction_value
     def add_BAL(self, value: float) -> None:
         self.__BAL__ += value
         tmp_TCV = self.get_TCV()
@@ -377,8 +377,8 @@ class Portfolio(AbstractPortfolio):
 #########BAL getter setter##########WARNING need to be private
     def get_BAL(self) -> float:
         return self.__BAL__
-    def set_BAL(self, value: float) -> None:
-        self.__BAL__ = value
+    def set_BAL(self, value: float, transaction_value:float=0.0) -> None:
+        self.__BAL__ = value- transaction_value
     def add_BAL(self, value: float) -> None:
         self.__BAL__ += value
 #########BAL getter setter##########

@@ -16,7 +16,7 @@ class Strategy(obs.Subject):
                 _initial_investment_percentage: float, stop_loss_activated: bool):
         self.__strategy_report__ = {}
         self.__backtest_command__ = btcmd.BacktestCommand(portfolio)
-        self._state = strategy_state.StrategyWaitToEntry()
+        self._state = strategy_state.StrategyWaitToEntry(self)
         self._short_strategy = False
         #How many cycle do I freeze the strategy ?
         self._freezing_cycle = _freezing_cycle
@@ -40,15 +40,23 @@ class Strategy(obs.Subject):
     def change_state (self, _state: strategy_state) -> None :
         self._state = _state
     def get_state (self)-> str :
-        return self._state.get_state()
+        return self._state
 
     def freeze (self) -> None :
-        self._state.freeze (self, )
+        self._state.freeze (self)
     #########State Pattern#########
     ###############################
 
     def get_portfolio(self) -> pf.Portfolio:
-        return self.__backtest_command__.get_portfolio()
+        return self.__backtest_command__.get_portfolio
+
+    _short_strategy = False
+    def is_strategy_short (self) -> bool :
+        return self._state.is_strategy_short()
+    def set_strategy_short (self, _b: bool):
+        self._state.set_strategy_short(_b)
+    #########State Pattern#########
+    ###############################
 
     ##################################
     #########Observer Pattern#########
@@ -74,6 +82,7 @@ class Strategy(obs.Subject):
 
     def update_report(self, _time: datetime, position,
                         position_status, portfolio: pf.AbstractPortfolio,
+                        transaction_cost: float,
                         verbose = False) -> None:
         """
         Update a report
@@ -84,6 +93,7 @@ class Strategy(obs.Subject):
         self.__strategy_report__ [_time] = {}
         self.__strategy_report__ [_time]["Position"] = position
         self.__strategy_report__ [_time]["Position Status"] = position_status
+        self.__strategy_report__ [_time]["Transaction Cost"] = transaction_cost
         #Just keep once the TCV -> scale graph
         self.__strategy_report__ [_time]["Portfolio"] = portfolio.get_report(_time)
 
@@ -98,12 +108,11 @@ class Strategy(obs.Subject):
 
     #################################
     #########Command Pattern#########
-    @abstractmethod
-    def entry(self, time: datetime, list_investments: dict, verbose = False) -> None:
-        self.__backtest_command__.entry (time, list_investments)
+    def entry(self, time: datetime, list_investments: dict,\
+              transaction_cost, verbose = False) -> None:
+        self.__backtest_command__.entry (time, list_investments, transaction_cost)
 
-    @abstractmethod
-    def exit(self, time: datetime, verbose = False) -> None:
-        self.__backtest_command__.exit (time)
+    def exit(self, time: datetime, transaction_cost: float, verbose = False) -> None:
+        self.__backtest_command__.exit (time, transaction_cost)
     #########Command Pattern#########
     #################################
