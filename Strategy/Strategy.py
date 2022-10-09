@@ -13,19 +13,21 @@ import Strategy.statistics as stat
 
 class Strategy(obs.Subject):
     def __init__(self, portfolio: pf.Portfolio, _freezing_cycle: int,
-                _initial_investment_percentage: float, stop_loss_activated: bool):
+                _initial_investment_percentage: float, _stop_loss_activated: bool,
+                _transaction_cost: float):
         self.__strategy_report__ = {}
-        self.__backtest_command__ = btcmd.BacktestCommand(portfolio)
-        self._state = strategy_state.StrategyWaitToEntry(self)
-        self._short_strategy = False
+        self.__backtest_command__           = btcmd.BacktestCommand(portfolio)
+        self._state                         = strategy_state.StrategyWaitToEntry(self)
+        self._short_strategy                = False
         #How many cycle do I freeze the strategy ?
-        self._freezing_cycle = _freezing_cycle
+        self._freezing_cycle                = _freezing_cycle
         #initial_investment_percentage=This variable is 1 i.e. not used yet
         #i.e. 0.2% of the capital for instance
         self._initial_investment_percentage = _initial_investment_percentage
-        self._stop_loss_activated = stop_loss_activated
+        self._stop_loss_activated           = _stop_loss_activated
+        self.__transaction_cost__           = _transaction_cost
         #Observers
-        self._statistics_viewer = stat.StatisticsViewer()
+        self._statistics_viewer             = stat.StatisticsViewer()
         self.attach (self._statistics_viewer)#don't forget to remove it at the end
 
     @abstractmethod
@@ -116,3 +118,15 @@ class Strategy(obs.Subject):
         self.__backtest_command__.exit (time, transaction_cost)
     #########Command Pattern#########
     #################################
+
+    def exit_strategy_transaction_cost (self, time:datetime)-> float:
+        my_portfolio = self.get_portfolio()
+        _shares = my_portfolio.get_shares ()
+        transaction_cost = 0
+        for key in _shares:
+            transaction_cost += abs(_shares[key].value(time))*self.__transaction_cost__
+
+        return transaction_cost
+    
+    def get_transaction_cost (self)-> float:
+        return self.__transa
