@@ -74,7 +74,7 @@ class JohannsenClassic (st.Strategy):
             _share_name = moneys[i]
             tmp_mq = market_quotation.\
                 quotation('Close Time', _share_name, time_now)
-            spread_weights [i] = spread_weights [i]*np.log(tmp_mq)/tmp_mq
+            spread_weights [i] = spread_weights [i] #*np.log(tmp_mq)/tmp_mq
 
         return spread_weights, log_return
 
@@ -102,7 +102,7 @@ class JohannsenClassic (st.Strategy):
         if pf_state == "READY": #or # if pfState == pfstate.PortfolioIsReady():
 
             # The Spread or Portfolio to buy see research Spread
-            spread      = np.dot (log_return, spread_weights)
+            spread      = np.dot (log_return, -spread_weights) #WARNING MINUS
             mu_average  = np.mean(spread) # Mean
             sigma       = np.var (spread) # Variance
             sigma       = np.sqrt(sigma)
@@ -114,20 +114,25 @@ class JohannsenClassic (st.Strategy):
             # plt.show()
 
             my_invested_money = my_portfolio.get_BAL ()
-            entry_transaction_cost = my_invested_money*self.__transaction_cost__
+            entry_transaction_cost =\
+                self.entry_strategy_transaction_cost(time_now, my_invested_money)
             if strategy_state == "WaitToEntry":
                 alpha=1
                 # We normalize the weights with the present money
                 # Amount of money in USDT I actually hold in my balance to trade
-                my_money = my_invested_money-entry_transaction_cost
+                my_money = my_invested_money - entry_transaction_cost
                 if my_money>0:
-                    alpha  = (spread_weights * quotations[time_serie_size-1,:]) / my_money
-                    how_much_to_invest_weights = spread_weights/alpha
-                    how_much_to_invest_weights = how_much_to_invest_weights/number_of_shares
+                    _q = quotations[time_serie_size-1,:]
+                    spread_weights = spread_weights / number_of_shares * np.log(_q)/_q
+                    alpha  = (spread_weights * my_money) / quotations[time_serie_size-1,:]
+                    # how_much_to_invest_weights = spread_weights/alpha
+                    how_much_to_invest_weights = alpha # * quotations[time_serie_size-1,:]
+                    # how_much_to_invest_weights = how_much_to_invest_weights/number_of_shares
+                    # how_much_to_invest_weights = alpha
                 else:
-                    print("WARNING : my_money<=0\n")
+                    print("WARNING : my_money<=0, exit()\n")
                     how_much_to_invest_weights = np.array ([-12345 for key in moneys])
-                    return
+                    sys.exit()
 
                 investment_dict={}
 
@@ -154,7 +159,8 @@ class JohannsenClassic (st.Strategy):
                         self.change_state (state.StrategyWaitToExit(self))
                         self.update_report(time_now,"Long","Enter",\
                                             my_portfolio, entry_transaction_cost)
-                    self.debug_strat(spread, mu_average, constant_std, sigma)
+                    self.debug_strat(spread, mu_average, constant_std,\
+                         sigma, "BUY LONG", entry_transaction_cost)
                  #we start the Short strategy
                 elif spread[-1] > mu_average+constant_std*sigma:
                     if spread[-1] - spread[-2] > 0:
@@ -172,7 +178,8 @@ class JohannsenClassic (st.Strategy):
                         self.update_report(time_now, "Short", "Enter",\
                                            my_portfolio, entry_transaction_cost)
                         self.set_strategy_short (True)
-                        self.debug_strat(spread, mu_average, constant_std, sigma)
+                        self.debug_strat(spread, mu_average, constant_std,\
+                             sigma, "BUY SHORT", entry_transaction_cost)
 
             #Wait to exit the strategy
             elif strategy_state == "WaitToExit":
@@ -185,17 +192,19 @@ class JohannsenClassic (st.Strategy):
                     # if spread[-1] - spread[-2] < 0:
                         strategy_state.trailing_sell(time_now, exit_transaction_cost)
                         self.change_state (state.StrategyWaitToEntry(self))
-                        self.update_report(time_now,"Short","Exit", my_portfolio, entry_transaction_cost)
+                        self.update_report(time_now,"Short","Exit", my_portfolio, exit_transaction_cost)
                         self.set_strategy_short (False)
-                        self.debug_strat(spread, mu_average, constant_std, sigma)
+                        self.debug_strat(spread, mu_average, constant_std, sigma,\
+                             "SELL SHORT", exit_transaction_cost)
 
                 # We exit the long strategy
                 elif spread[-1] > mu_average and not self.is_strategy_short():
                     # if spread[-1] - spread[-2] > 0:
                         strategy_state.trailing_sell(time_now, exit_transaction_cost)
                         self.change_state (state.StrategyWaitToEntry(self))
-                        self.update_report(time_now,"Long","Exit", my_portfolio, entry_transaction_cost)
-                        self.debug_strat(spread, mu_average, constant_std, sigma)
+                        self.update_report(time_now,"Long","Exit", my_portfolio, exit_transaction_cost)
+                        self.debug_strat(spread, mu_average, constant_std, sigma,\
+                             "SELL LONG", exit_transaction_cost)
 
                 #Stop Loss at 5%
                 elif portfolio_value/buying_value < 0.95:
@@ -291,17 +300,19 @@ class JohannsenClassic (st.Strategy):
 
             i+=1
 
-    def debug_strat(self, spread, mu_average, constant_std, sigma):
+    _debug = False
+    def debug_strat(self, spread, mu_average, constant_std, sigma, sell_or_buy, transaction_cost):
+        if self._debug:
             my_portfolio = self.get_portfolio()
+            plt.show(block=False)
             plt.clf()
             plt.plot(spread[-30:])
             plt.plot((mu_average-constant_std*sigma)*np.ones(30))
             plt.plot((mu_average)*np.ones(30))
             plt.plot((mu_average+constant_std*sigma)*np.ones(30))
+            print("TCV = ", my_portfolio.get_TCV(), " ",\
+                    sell_or_buy, ", transaction fee = ", transaction_cost)
             plt.show()
-            print("TCV = ", my_portfolio.get_TCV())
-            input()
-
 
 # References
 # Binance Fees calculator : https://www.binance.com/en/support/faq/e85d6e703b874674840122196b89780a

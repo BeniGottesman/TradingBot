@@ -127,6 +127,9 @@ class Strategy(obs.Subject):
             transaction_cost += abs(_shares[key].value(time))*self.__transaction_cost__
 
         return transaction_cost
-    
+
+    def entry_strategy_transaction_cost (self, time:datetime, my_invested_money: float)-> float:
+        return self.__transaction_cost__ * my_invested_money
+
     def get_transaction_cost (self)-> float:
-        return self.__transa
+        return self.__transaction_cost__
