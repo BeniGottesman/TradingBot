@@ -66,15 +66,16 @@ class JohannsenClassic (st.Strategy):
 
         # v =  np.array ([np.ones(jres.r), jres.evecr[:,0], jres.evecr[:,1]], dtype=object)
         spread_weights = jres.evecr[:,0] # Weights to hold in order to make the mean reverting strat
-        spread_weights = spread_weights/spread_weights[0] #normalisation with the first crypto
+        #normalisation with the first crypto
+        # spread_weights = spread_weights/spread_weights[0] 
 
-        #since the spread is wrt the log so we add this loop
-        market_quotation = mq.MarketQuotationClient().get_client()
-        for i, _ in enumerate(spread_weights):
-            _share_name = moneys[i]
-            tmp_mq = market_quotation.\
-                quotation('Close Time', _share_name, time_now)
-            spread_weights [i] = spread_weights [i] #*np.log(tmp_mq)/tmp_mq
+        # #since the spread is wrt the log so we add this loop
+        # market_quotation = mq.MarketQuotationClient().get_client()
+        # for i, _ in enumerate(spread_weights):
+        #     _share_name = moneys[i]
+        #     tmp_mq = market_quotation.\
+        #         quotation('Close Time', _share_name, time_now)
+        #     spread_weights [i] = spread_weights [i] #*np.log(tmp_mq)/tmp_mq
 
         return spread_weights, log_return
 
@@ -102,7 +103,7 @@ class JohannsenClassic (st.Strategy):
         if pf_state == "READY": #or # if pfState == pfstate.PortfolioIsReady():
 
             # The Spread or Portfolio to buy see research Spread
-            spread      = np.dot (log_return, -spread_weights) #WARNING MINUS
+            spread      = np.dot (log_return, spread_weights) #WARNING MINUS
             mu_average  = np.mean(spread) # Mean
             sigma       = np.var (spread) # Variance
             sigma       = np.sqrt(sigma)
@@ -123,16 +124,19 @@ class JohannsenClassic (st.Strategy):
                 my_money = my_invested_money - entry_transaction_cost
                 if my_money>0:
                     _q = quotations[time_serie_size-1,:]
-                    spread_weights = spread_weights / number_of_shares * np.log(_q)/_q
-                    alpha  = (spread_weights * my_money) / quotations[time_serie_size-1,:]
-                    # how_much_to_invest_weights = spread_weights/alpha
-                    how_much_to_invest_weights = alpha # * quotations[time_serie_size-1,:]
-                    # how_much_to_invest_weights = how_much_to_invest_weights/number_of_shares
+                    _x = my_invested_money/spread[-1]
+                    how_much_to_invest_weights = 0.01*_x * np.log(_q)/_q
+                    # spread_weights = spread_weights / number_of_shares * np.log(_q)/_q
+                    # alpha  = (spread_weights * my_money) / quotations[time_serie_size-1,:]
+                    # # how_much_to_invest_weights = spread_weights/alpha
+                    # how_much_to_invest_weights = alpha # * quotations[time_serie_size-1,:]
+                    # # how_much_to_invest_weights = how_much_to_invest_weights/number_of_shares
                     # how_much_to_invest_weights = alpha
                 else:
                     print("WARNING : my_money<=0, exit()\n")
                     how_much_to_invest_weights = np.array ([-12345 for key in moneys])
                     sys.exit()
+                    # return
 
                 investment_dict={}
 
@@ -207,7 +211,7 @@ class JohannsenClassic (st.Strategy):
                              "SELL LONG", exit_transaction_cost)
 
                 #Stop Loss at 5%
-                elif portfolio_value/buying_value < 0.95:
+                elif portfolio_value/buying_value < 0.97:
                     if self._stop_loss_activated:
                         self.exit(time_now, self.__transaction_cost__ )
                         self.change_state (state.StrategyFreeze(self, self._freezing_cycle))
@@ -302,16 +306,16 @@ class JohannsenClassic (st.Strategy):
 
     _debug = False
     def debug_strat(self, spread, mu_average, constant_std, sigma, sell_or_buy, transaction_cost):
+        my_portfolio = self.get_portfolio()
+        print("TCV = ", my_portfolio.get_TCV(), " ",\
+                sell_or_buy, ", transaction fee = ", transaction_cost)
         if self._debug:
-            my_portfolio = self.get_portfolio()
             plt.show(block=False)
             plt.clf()
             plt.plot(spread[-30:])
             plt.plot((mu_average-constant_std*sigma)*np.ones(30))
             plt.plot((mu_average)*np.ones(30))
             plt.plot((mu_average+constant_std*sigma)*np.ones(30))
-            print("TCV = ", my_portfolio.get_TCV(), " ",\
-                    sell_or_buy, ", transaction fee = ", transaction_cost)
             plt.show()
 
 # References

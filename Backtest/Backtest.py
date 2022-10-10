@@ -41,7 +41,8 @@ def test_strategy () -> None :
     #Another version with my selected pairs
     pairs_to_trade= {}
     pairs_to_trade [quote_currency] =\
-        ["BTCUSDT", "ETHUSDT", "XRPUSDT", "SOLUSDT", "ADAUSDT", "LTCUSDT", "BNBUSDT", "TRXUSDT"]
+        ["BTCUSDT", "ETHUSDT"]
+        # ["BTCUSDT", "ETHUSDT", "XRPUSDT", "SOLUSDT", "ADAUSDT", "LTCUSDT", "BNBUSDT", "TRXUSDT"]
     # pairs_to_trade [quote_currency] = ["BTCUSDT", "SOLUSDT"]
     parameters_scrap["symbols"] = pairs_to_trade
     dr.retrieve_historic_from_binance_datas (parameters_scrap)
@@ -71,7 +72,7 @@ def test_strategy () -> None :
     days_rolling_window = 300
     time_cycle_in_second = time_candle * 60
     initial_investment_percentage = 0.10
-    transaction_cost = 0.0015
+    transaction_cost = 0.00000015
     strategy_name = "Test Strategy"
     _days = 1
     _freezing_cycle = _days * (24*60/time_candle) #4 days freezing
