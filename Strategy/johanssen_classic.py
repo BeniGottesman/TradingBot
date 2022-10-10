@@ -104,8 +104,8 @@ class JohannsenClassic (st.Strategy):
 
             # The Spread or Portfolio to buy see research Spread
             spread      = np.dot (log_return, spread_weights) #WARNING MINUS
-            mu_average  = np.mean(spread) # Mean
-            sigma       = np.var (spread) # Variance
+            mu_average  = np.mean(spread[-100:]) # Mean
+            sigma       = np.var (spread[-100:]) # Variance
             sigma       = np.sqrt(sigma)
 
             # plt.plot(spread[-30:])
@@ -125,7 +125,7 @@ class JohannsenClassic (st.Strategy):
                 if my_money>0:
                     _q = quotations[time_serie_size-1,:]
                     _x = my_invested_money/spread[-1]
-                    how_much_to_invest_weights = 0.01*_x * np.log(_q)/_q
+                    how_much_to_invest_weights = 0.1*_x * np.log(_q)/_q
                     # spread_weights = spread_weights / number_of_shares * np.log(_q)/_q
                     # alpha  = (spread_weights * my_money) / quotations[time_serie_size-1,:]
                     # # how_much_to_invest_weights = spread_weights/alpha
