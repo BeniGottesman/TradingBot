@@ -74,7 +74,7 @@ def test_strategy () -> None :
     initial_investment_percentage = 0.10
     transaction_cost = 0.000000
     strategy_name = "Test Strategy"
-    _days = 1
+    _days = 2
     _freezing_cycle = _days * (24*60/time_candle) #4 days freezing
     stop_loss_activated = False
     parameters_strategy = {

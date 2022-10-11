@@ -14,10 +14,10 @@ import Strategy.statistics as stat
 class Strategy(obs.Subject):
     def __init__(self, portfolio: pf.Portfolio, _freezing_cycle: int,
                 _initial_investment_percentage: float, _stop_loss_activated: bool,
-                _transaction_cost: float):
+                _transaction_cost: float, _start_date: datetime):
         self.__strategy_report__ = {}
         self.__backtest_command__           = btcmd.BacktestCommand(portfolio)
-        self._state                         = strategy_state.StrategyWaitToEntry(self)
+        self._state                         = strategy_state.StrategyWaitToEntry(_start_date, self)
         self._short_strategy                = False
         #How many cycle do I freeze the strategy ?
         self._freezing_cycle                = _freezing_cycle

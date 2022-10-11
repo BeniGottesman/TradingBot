@@ -10,9 +10,11 @@ import designPattern.state as st
 class StrategyState(st.StateAbstract):
     #__savePfState__=
     # Contain the value of the pf when we enter the strat->useful for computing a stop loss
-    def __init__(self, strategy: strat.Strategy):
+    def __init__(self, time: datetime, strategy: strat.Strategy):
         super().__init__()
-        self.__strategy__ = strategy
+        self.__strategy__   = strategy
+        # Time at which we entered the strategy.
+        self.__entry_time__ = time
 
     @abstractmethod
     def get_state (self) -> str:
@@ -23,7 +25,6 @@ class StrategyState(st.StateAbstract):
         Return a string containing the state.
         """
         pass
-
 
     @abstractmethod
     def __eq__(self, str_other: str):
@@ -40,14 +41,14 @@ class StrategyState(st.StateAbstract):
         pass
 
     @abstractmethod
-    def freeze (self, _time_cycle: int) -> None :
+    def freeze (self,  time:datetime, _time_cycle: int) -> None :
         pass
 
     @abstractmethod
     def trailing_buy(self, time_now:datetime, investment_dict, transaction_cost) -> None :
         pass
     @abstractmethod
-    def trailing_sell(self, time:datetime) -> None :
+    def trailing_sell(self, time:datetime, transaction_cost: float) -> None :
         pass
     @abstractmethod
     def trailing_stop(self, time:datetime) -> None :
@@ -62,6 +63,14 @@ class StrategyState(st.StateAbstract):
     def set_strategy_short (self, _b: bool):
         self.__short_strategy__ = _b
 
+    def elapsed_time (self, _time: datetime) -> float:
+        """
+        Return the time elapsed between the moment
+        we entered the strategy/state and _time in second.
+        """
+        _c = _time - self.__entry_time__
+        return _c.total_seconds()
+
 class StrategyWaitToEntry (StrategyState): #== Strategy is Ready
     def __str__(self):
         return "waitToEntry"
@@ -72,8 +81,8 @@ class StrategyWaitToEntry (StrategyState): #== Strategy is Ready
     def state_of_strategy (self) -> str:
         return "WaitToEntry"
 
-    def freeze (self, _time_cycle: int) -> None :
-        self.__strategy__.change_state(StrategyFreeze(self, _time_cycle))
+    def freeze (self, time:datetime, _time_cycle: int) -> None :
+        self.__strategy__.change_state(StrategyFreeze(self, time, _time_cycle))
 
     def trailing_buy(self, time_now, investment_dict, transaction_cost) -> None :
         self.__strategy__ .entry(time_now, investment_dict, transaction_cost)
@@ -95,8 +104,8 @@ class StrategyWaitToExit (StrategyState):
     def state_of_strategy (self) -> str:
         return "WaitToExit"
 
-    def freeze (self, _time_cycle: int) -> None :
-        self.__strategy__.change_state(StrategyFreeze(self, _time_cycle))
+    def freeze (self, time:datetime, _time_cycle: int) -> None :
+        self.__strategy__.change_state(StrategyFreeze(self, time, _time_cycle))
 
     def trailing_buy(self, time_now:datetime, investment_dict, transaction_cost) -> None :
         return
@@ -108,8 +117,8 @@ class StrategyWaitToExit (StrategyState):
         return
 
 class StrategyFreeze (StrategyState):
-    def __init__(self, strategy: strat.Strategy, _freeze_time_: int):
-        super().__init__(strategy)
+    def __init__(self, time_now: datetime, strategy: strat.Strategy, _freeze_time_: int):
+        super().__init__(time_now, strategy)
         self.__freeze_time__ = _freeze_time_
         self.__cycle_counter__ = 0
 
@@ -126,14 +135,14 @@ class StrategyFreeze (StrategyState):
     def get_counter(self) -> int:
         return self.__cycle_counter__
 
-    def add_counter(self) -> None:
+    def add_counter(self, time_now: datetime) -> None:
         strategy = self.__strategy__
         if self.__cycle_counter__ < self.__freeze_time__:
             self.__cycle_counter__ = self.__cycle_counter__ + 1
             if self.__cycle_counter__ >= self.__freeze_time__:
-                strategy.change_state (StrategyWaitToEntry(strategy))
+                strategy.change_state (StrategyWaitToEntry(time_now, strategy))
 
-    def freeze (self, _time_cycle: int) -> None :
+    def freeze (self, time:datetime, _time_cycle: int) -> None :
         return
 
     def trailing_buy(self, time_now:datetime, investment_dict, transaction_cost) -> None :

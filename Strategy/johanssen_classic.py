@@ -36,7 +36,7 @@ class JohannsenClassic (st.Strategy):
         super().__init__(my_portfolio, parameters['freezing cycle'],
                         parameters['initial investment percentage'],\
                         parameters['stop loss activated'],\
-                        parameters['transaction cost'])
+                        parameters['transaction cost'], parameters['start date'])
         self.__time_cycle_in_second__ = parameters['time cycle in second'] #15mn=15*60 for instance
         self.__time_candle__ = parameters['time candle']
         self.__rollingwindowindays__  = parameters['days rolling window'] #=30 days for instance
@@ -94,7 +94,7 @@ class JohannsenClassic (st.Strategy):
         # the state of the strategy
         strategy_state = self.get_state() #string overload
         if strategy_state == "Freeze":
-            strategy_state = self._state.add_counter() #string overload
+            strategy_state = self._state.add_counter(time_now) #string overload
             if strategy_state == "Freeze":
                 return
 
@@ -108,12 +108,6 @@ class JohannsenClassic (st.Strategy):
             mu_average  = np.mean(spread[-one_day:]) # Mean
             sigma       = np.var (spread[-one_day:]) # Variance
             sigma       = np.sqrt(sigma)
-
-            # plt.plot(spread[-30:])
-            # plt.plot((mu_average-constant_std*sigma)*np.ones(30))
-            # plt.plot((mu_average)*np.ones(30))
-            # plt.plot((mu_average+constant_std*sigma)*np.ones(30))
-            # plt.show()
 
             my_invested_money = my_portfolio.get_BAL ()
             entry_transaction_cost =\
@@ -139,12 +133,6 @@ class JohannsenClassic (st.Strategy):
                 for key, value in zip(moneys, how_much_to_invest_weights):
                     investment_dict[key] = value #WARNING
 
-                # plt.plot (spread)
-                # plt.plot ((mu_average-constant_std*sigma)*np.ones(len(spread) ))
-                # plt.plot ((mu_average+constant_std*sigma)*np.ones(len(spread) ))
-                # plt.show()
-
-
                 #we start the Long strategy
                 if spread[-1] < mu_average-constant_std*sigma:
                     if spread[-1] - spread[-2] < 0:
@@ -156,7 +144,7 @@ class JohannsenClassic (st.Strategy):
                                                     entry_transaction_cost)
                         my_portfolio.set_transaction_time(time_now)# check if it is useful
                         portfolio_caretaker.backup(time_now)
-                        self.change_state (state.StrategyWaitToExit(self))
+                        self.change_state (state.StrategyWaitToExit(time_now, self))
                         self.update_report(time_now,"Long","Enter",\
                                             my_portfolio, entry_transaction_cost)
                     self.debug_strat(time_now, spread, mu_average, constant_std,\
@@ -174,7 +162,7 @@ class JohannsenClassic (st.Strategy):
                             investment_dict, entry_transaction_cost)
                         my_portfolio.set_transaction_time(time_now)
                         portfolio_caretaker.backup(time_now)
-                        self.change_state (state.StrategyWaitToExit(self))
+                        self.change_state (state.StrategyWaitToExit(time_now, self))
                         self.update_report(time_now, "Short", "Enter",\
                                            my_portfolio, entry_transaction_cost)
                         self.set_strategy_short (True)
@@ -192,7 +180,7 @@ class JohannsenClassic (st.Strategy):
                     if spread[-1] < mu_average and self.is_strategy_short():
                         # if spread[-1] - spread[-2] < 0:
                             strategy_state.trailing_sell(time_now, exit_transaction_cost)
-                            self.change_state (state.StrategyWaitToEntry(self))
+                            self.change_state (state.StrategyWaitToEntry(time_now, self))
                             self.update_report(time_now,"Short","Exit", my_portfolio, exit_transaction_cost)
                             self.set_strategy_short (False)
                             self.debug_strat(time_now, spread, mu_average, constant_std, sigma,\
@@ -202,16 +190,25 @@ class JohannsenClassic (st.Strategy):
                     elif spread[-1] > mu_average and not self.is_strategy_short():
                         # if spread[-1] - spread[-2] > 0:
                             strategy_state.trailing_sell(time_now, exit_transaction_cost)
-                            self.change_state (state.StrategyWaitToEntry(self))
+                            self.change_state (state.StrategyWaitToEntry(time_now, self))
                             self.update_report(time_now,"Long","Exit", my_portfolio, exit_transaction_cost)
                             self.debug_strat(time_now, spread, mu_average, constant_std, sigma,\
                                 "SELL LONG", exit_transaction_cost)
+
+                elif strategy_state.elapsed_time(time_now) > 2*24*60*60:
+                    self.exit(time_now, self.__transaction_cost__ )
+                    self.change_state (\
+                        state.StrategyFreeze(time_now, self, self._freezing_cycle))
+                    print ("time_elapsed() : STOP LOSS = ", time_now)
+                    self.update_report(time_now, "Stop Loss", "Exit",\
+                                        my_portfolio, entry_transaction_cost)
 
                 #Stop Loss at 5%
                 elif portfolio_value/buying_value < 0.80:
                     if self._stop_loss_activated:
                         self.exit(time_now, self.__transaction_cost__ )
-                        self.change_state (state.StrategyFreeze(self, self._freezing_cycle))
+                        self.change_state (\
+                            state.StrategyFreeze(time_now, self, self._freezing_cycle))
                         print ("STOP LOSS = ", time_now)
                         self.update_report(time_now, "Stop Loss", "Exit",\
                                             my_portfolio, entry_transaction_cost)
@@ -220,7 +217,7 @@ class JohannsenClassic (st.Strategy):
                 # It means we have just sold the pf
                 if self.get_state() == "WaitToEntry"\
                      and portfolio_value/buying_value < 0.999 + self.__transaction_cost__:
-                    self.change_state (state.StrategyFreeze(self, self._freezing_cycle))
+                    self.change_state (state.StrategyFreeze(time_now, self, self._freezing_cycle))
                     print("Freezing.")
 
             # self.__state__.setState("Nothing")
@@ -308,9 +305,10 @@ class JohannsenClassic (st.Strategy):
     def debug_strat(self, time_now, spread,\
         mu_average, constant_std, sigma, sell_or_buy, transaction_cost):
         my_portfolio = self.get_portfolio()
-        print("time = ", time_now, ", TCV = ", my_portfolio.get_TCV(), ", ",\
-                "BAL = ", my_portfolio.get_BAL(), ", ",\
-                sell_or_buy, ", transaction fee = ", transaction_cost)
+        print("time = ", time_now, ",",\
+                "TCV = ", round (my_portfolio.get_TCV(),4),",",\
+                "BAL = ", round(my_portfolio.get_BAL(),4),",",\
+                sell_or_buy, ", Transaction Fee = ", transaction_cost)
         if self._debug:
             plt.show(block=False)
             plt.clf()

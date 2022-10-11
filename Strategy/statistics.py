@@ -43,9 +43,11 @@ class StatisticsViewer(obs.Observer):
                     self.__long__.append  (0)
             elif tmp_report[time_key]["Position"] == "Stop Loss":
                 self.__nb_stop_loss__  += 1
+                self.__short__.append   (0)
+                self.__long__.append    (0)
             else:
-                self.__short__.append  (0)
-                self.__long__.append  (0)
+                self.__short__.append   (0)
+                self.__long__.append    (0)
             self.__total__ = self.__nb_long__ + self.__nb_short__
             #Just keep once the TCV -> scale graph
             self.__TCV__[time_key] = tmp_report[time_key]["Portfolio"]["TCV"]
