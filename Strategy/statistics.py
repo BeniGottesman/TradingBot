@@ -41,8 +41,8 @@ class StatisticsViewer(obs.Observer):
                     self.__nb_short__      += 1
                     self.__short__.append (1)
                     self.__long__.append  (0)
-                elif tmp_report[time_key]["Position"] == "Stop Loss":
-                    self.__nb_stop_loss__  += 1
+            elif tmp_report[time_key]["Position"] == "Stop Loss":
+                self.__nb_stop_loss__  += 1
             else:
                 self.__short__.append  (0)
                 self.__long__.append  (0)

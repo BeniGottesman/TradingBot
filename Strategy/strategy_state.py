@@ -73,7 +73,7 @@ class StrategyWaitToEntry (StrategyState): #== Strategy is Ready
         return "WaitToEntry"
 
     def freeze (self, _time_cycle: int) -> None :
-        self.__strategy__.change_state(StrategyFreeze(_time_cycle))
+        self.__strategy__.change_state(StrategyFreeze(self, _time_cycle))
 
     def trailing_buy(self, time_now, investment_dict, transaction_cost) -> None :
         self.__strategy__ .entry(time_now, investment_dict, transaction_cost)
@@ -96,7 +96,7 @@ class StrategyWaitToExit (StrategyState):
         return "WaitToExit"
 
     def freeze (self, _time_cycle: int) -> None :
-        self.__strategy__.change_state(StrategyFreeze(_time_cycle))
+        self.__strategy__.change_state(StrategyFreeze(self, _time_cycle))
 
     def trailing_buy(self, time_now:datetime, investment_dict, transaction_cost) -> None :
         return

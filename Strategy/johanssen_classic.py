@@ -38,10 +38,10 @@ class JohannsenClassic (st.Strategy):
                         parameters['stop loss activated'],\
                         parameters['transaction cost'])
         self.__time_cycle_in_second__ = parameters['time cycle in second'] #15mn=15*60 for instance
+        self.__time_candle__ = parameters['time candle']
         self.__rollingwindowindays__  = parameters['days rolling window'] #=30 days for instance
-        _daysrollingwindow            = parameters["days rolling window"]
         self.__rollingwindow__        = int (\
-            (60/(self.__time_cycle_in_second__/60))*24*_daysrollingwindow)
+            (60/(self.__time_cycle_in_second__/60))*24*self.__rollingwindowindays__)
         self.__name__ = parameters['strategy name']
         self.__start_date__ = parameters['start date']
         self.__end_date__   = parameters['end date']
@@ -102,10 +102,11 @@ class JohannsenClassic (st.Strategy):
         pf_state = my_portfolio.get_state()
         if pf_state == "READY": #or # if pfState == pfstate.PortfolioIsReady():
 
+            one_day = int (24*60/self.__time_candle__)
             # The Spread or Portfolio to buy see research Spread
-            spread      = np.dot (log_return, spread_weights) #WARNING MINUS
-            mu_average  = np.mean(spread[-100:]) # Mean
-            sigma       = np.var (spread[-100:]) # Variance
+            spread      = np.dot (log_return, -spread_weights) #WARNING MINUS
+            mu_average  = np.mean(spread[-one_day:]) # Mean
+            sigma       = np.var (spread[-one_day:]) # Variance
             sigma       = np.sqrt(sigma)
 
             # plt.plot(spread[-30:])
@@ -125,13 +126,8 @@ class JohannsenClassic (st.Strategy):
                 if my_money>0:
                     _q = quotations[time_serie_size-1,:]
                     _x = my_invested_money/spread[-1]
-                    how_much_to_invest_weights = 0.1*_x * np.log(_q)/_q
-                    # spread_weights = spread_weights / number_of_shares * np.log(_q)/_q
-                    # alpha  = (spread_weights * my_money) / quotations[time_serie_size-1,:]
-                    # # how_much_to_invest_weights = spread_weights/alpha
-                    # how_much_to_invest_weights = alpha # * quotations[time_serie_size-1,:]
-                    # # how_much_to_invest_weights = how_much_to_invest_weights/number_of_shares
-                    # how_much_to_invest_weights = alpha
+                    qty_invested = 0.5
+                    how_much_to_invest_weights = -qty_invested*_x * np.log(_q)/_q
                 else:
                     print("WARNING : my_money<=0, exit()\n")
                     how_much_to_invest_weights = np.array ([-12345 for key in moneys])
@@ -163,7 +159,7 @@ class JohannsenClassic (st.Strategy):
                         self.change_state (state.StrategyWaitToExit(self))
                         self.update_report(time_now,"Long","Enter",\
                                             my_portfolio, entry_transaction_cost)
-                    self.debug_strat(spread, mu_average, constant_std,\
+                    self.debug_strat(time_now, spread, mu_average, constant_std,\
                          sigma, "BUY LONG", entry_transaction_cost)
                  #we start the Short strategy
                 elif spread[-1] > mu_average+constant_std*sigma:
@@ -182,7 +178,7 @@ class JohannsenClassic (st.Strategy):
                         self.update_report(time_now, "Short", "Enter",\
                                            my_portfolio, entry_transaction_cost)
                         self.set_strategy_short (True)
-                        self.debug_strat(spread, mu_average, constant_std,\
+                        self.debug_strat(time_now, spread, mu_average, constant_std,\
                              sigma, "BUY SHORT", entry_transaction_cost)
 
             #Wait to exit the strategy
@@ -192,37 +188,40 @@ class JohannsenClassic (st.Strategy):
                 portfolio_value = my_portfolio.get_TCV()
                 # We exit the Short strategy
                 # if portfolio_value/buying_value > 1.05+0.0015 :
-                if spread[-1] < mu_average and self.is_strategy_short():
-                    # if spread[-1] - spread[-2] < 0:
-                        strategy_state.trailing_sell(time_now, exit_transaction_cost)
-                        self.change_state (state.StrategyWaitToEntry(self))
-                        self.update_report(time_now,"Short","Exit", my_portfolio, exit_transaction_cost)
-                        self.set_strategy_short (False)
-                        self.debug_strat(spread, mu_average, constant_std, sigma,\
-                             "SELL SHORT", exit_transaction_cost)
+                if portfolio_value/buying_value > 1.0 + self.__transaction_cost__:
+                    if spread[-1] < mu_average and self.is_strategy_short():
+                        # if spread[-1] - spread[-2] < 0:
+                            strategy_state.trailing_sell(time_now, exit_transaction_cost)
+                            self.change_state (state.StrategyWaitToEntry(self))
+                            self.update_report(time_now,"Short","Exit", my_portfolio, exit_transaction_cost)
+                            self.set_strategy_short (False)
+                            self.debug_strat(time_now, spread, mu_average, constant_std, sigma,\
+                                "SELL SHORT", exit_transaction_cost)
 
-                # We exit the long strategy
-                elif spread[-1] > mu_average and not self.is_strategy_short():
-                    # if spread[-1] - spread[-2] > 0:
-                        strategy_state.trailing_sell(time_now, exit_transaction_cost)
-                        self.change_state (state.StrategyWaitToEntry(self))
-                        self.update_report(time_now,"Long","Exit", my_portfolio, exit_transaction_cost)
-                        self.debug_strat(spread, mu_average, constant_std, sigma,\
-                             "SELL LONG", exit_transaction_cost)
+                    # We exit the long strategy
+                    elif spread[-1] > mu_average and not self.is_strategy_short():
+                        # if spread[-1] - spread[-2] > 0:
+                            strategy_state.trailing_sell(time_now, exit_transaction_cost)
+                            self.change_state (state.StrategyWaitToEntry(self))
+                            self.update_report(time_now,"Long","Exit", my_portfolio, exit_transaction_cost)
+                            self.debug_strat(time_now, spread, mu_average, constant_std, sigma,\
+                                "SELL LONG", exit_transaction_cost)
 
                 #Stop Loss at 5%
-                elif portfolio_value/buying_value < 0.97:
+                elif portfolio_value/buying_value < 0.80:
                     if self._stop_loss_activated:
                         self.exit(time_now, self.__transaction_cost__ )
                         self.change_state (state.StrategyFreeze(self, self._freezing_cycle))
                         print ("STOP LOSS = ", time_now)
-                        self.update_report(time_now, "Stop Loss","Exit",\
+                        self.update_report(time_now, "Stop Loss", "Exit",\
                                             my_portfolio, entry_transaction_cost)
 
-                #We freeze if we exit without arbitrage
+                # We freeze if we exit without arbitrage
+                # It means we have just sold the pf
                 if self.get_state() == "WaitToEntry"\
-                     and portfolio_value/buying_value < 1 + 0.01 + self.__transaction_cost__:
+                     and portfolio_value/buying_value < 0.999 + self.__transaction_cost__:
                     self.change_state (state.StrategyFreeze(self, self._freezing_cycle))
+                    print("Freezing.")
 
             # self.__state__.setState("Nothing")
             #####Hedging : If we want to buy the spread#####
@@ -265,6 +264,7 @@ class JohannsenClassic (st.Strategy):
         number_of_shares = my_portfolio.get_number_of_shares()
         nparray_quotations = np.zeros(shape=(self.__rollingwindow__, number_of_shares))
 
+        one_month = int (30*24*60/self.__time_candle__)
         t_0 = tm() #1. We measure the time taken by the algorithm
         tmp_sym = symbol_to_trade[0]#it is the first symbol just to browse the df
         i=0
@@ -293,21 +293,23 @@ class JohannsenClassic (st.Strategy):
                             nparray_quotations, verbose)
 
             verbose = True
-            if verbose and i%500==0 and i > 0:
+            if verbose and i%one_month==0 and i > 0:
                 t_1 = tm() #2. We measure the time taken by the algorithm
                 print("i=", i, "time taken =", t_1-t_0)
                 self.notify()
                 print (self._statistics_viewer)
                 print (my_portfolio)
-                if verbose and i%5000==0:
+                if verbose and 12*one_month%i==0 and i>=12*one_month:
                     self._statistics_viewer.plot_TCV()
 
             i+=1
 
     _debug = False
-    def debug_strat(self, spread, mu_average, constant_std, sigma, sell_or_buy, transaction_cost):
+    def debug_strat(self, time_now, spread,\
+        mu_average, constant_std, sigma, sell_or_buy, transaction_cost):
         my_portfolio = self.get_portfolio()
-        print("TCV = ", my_portfolio.get_TCV(), " ",\
+        print("time = ", time_now, ", TCV = ", my_portfolio.get_TCV(), ", ",\
+                "BAL = ", my_portfolio.get_BAL(), ", ",\
                 sell_or_buy, ", transaction fee = ", transaction_cost)
         if self._debug:
             plt.show(block=False)

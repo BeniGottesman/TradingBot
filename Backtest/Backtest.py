@@ -69,10 +69,10 @@ def test_strategy () -> None :
 
     #Parameters for johanssen Strategy
     time_candle = 15
-    days_rolling_window = 15
+    days_rolling_window = 300
     time_cycle_in_second = time_candle * 60
     initial_investment_percentage = 0.10
-    transaction_cost = 0.00000015
+    transaction_cost = 0.000000
     strategy_name = "Test Strategy"
     _days = 1
     _freezing_cycle = _days * (24*60/time_candle) #4 days freezing
@@ -99,6 +99,6 @@ def test_strategy () -> None :
     #                         start_date, end_date,
     #                         strategy_name)
 
-    constant_std = 2.5
+    constant_std = 4.5
     johannsen_strategy.do_strategy(constant_std, pairs_to_trade, False)
     print("Strategy: Done.")
