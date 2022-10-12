@@ -63,7 +63,7 @@ class StrategyState(st.StateAbstract):
     def set_strategy_short (self, _b: bool):
         self.__short_strategy__ = _b
 
-    def elapsed_time (self, _time: datetime) -> float:
+    def elapsed_time_in_second (self, _time: datetime) -> float:
         """
         Return the time elapsed between the moment
         we entered the strategy/state and _time in second.

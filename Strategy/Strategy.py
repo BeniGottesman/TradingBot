@@ -20,7 +20,7 @@ class Strategy(obs.Subject):
         self._state                         = strategy_state.StrategyWaitToEntry(_start_date, self)
         self._short_strategy                = False
         #How many cycle do I freeze the strategy ?
-        self._freezing_cycle                = _freezing_cycle
+        self._freezing_cycle                = int (_freezing_cycle)
         #initial_investment_percentage=This variable is 1 i.e. not used yet
         #i.e. 0.2% of the capital for instance
         self._initial_investment_percentage = _initial_investment_percentage

@@ -1,3 +1,4 @@
+from datetime import datetime
 import Portfolio.portfolio as pf
 import Portfolio.share as sh
 import Strategy.johanssen_classic as jo
@@ -41,7 +42,7 @@ def test_strategy () -> None :
     #Another version with my selected pairs
     pairs_to_trade= {}
     pairs_to_trade [quote_currency] =\
-        ["BTCUSDT", "ETHUSDT"]
+        ["BTCUSDT", "BNBUSDT"]
         # ["BTCUSDT", "ETHUSDT", "XRPUSDT", "SOLUSDT", "ADAUSDT", "LTCUSDT", "BNBUSDT", "TRXUSDT"]
     # pairs_to_trade [quote_currency] = ["BTCUSDT", "SOLUSDT"]
     parameters_scrap["symbols"] = pairs_to_trade
@@ -89,7 +90,8 @@ def test_strategy () -> None :
             "transaction cost": transaction_cost,
             "strategy name": strategy_name, "freezing cycle": _freezing_cycle,
             "stop loss activated": stop_loss_activated,
-            "start date": start_date, "end date": end_date}
+            "start date": datetime.strptime(start_date, '%Y-%M-%d'),
+            "end date": end_date}
     johannsen_strategy = jo.JohannsenClassic(parameters_strategy)
     # number_of_quotations_periods = market.number_of_period()
     # johannsen_strategy = jo.JohannsenClassic(_shares,

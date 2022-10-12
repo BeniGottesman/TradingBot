@@ -85,7 +85,7 @@ class JohannsenClassic (st.Strategy):
                     constant_std: float, moneys: list, quotations: np.array,
                     verbose = False) -> None:
         time_serie_size   = quotations.shape[0]
-        number_of_shares  = quotations.shape[1]
+        # number_of_shares  = quotations.shape[1]
 
         spread_weights, log_return = self.johansen_weights_algorithm (time_now, moneys, quotations)
 
@@ -103,17 +103,19 @@ class JohannsenClassic (st.Strategy):
         if pf_state == "READY": #or # if pfState == pfstate.PortfolioIsReady():
 
             one_day = int (24*60/self.__time_candle__)
+            _day = 2*one_day
             # The Spread or Portfolio to buy see research Spread
+            if strategy_state.elapsed_time_in_second (time_now) > 10*(24*60*60):
+                _day = 20*one_day
             spread      = np.dot (log_return, -spread_weights) #WARNING MINUS
-            mu_average  = np.mean(spread[-one_day:]) # Mean
-            sigma       = np.var (spread[-one_day:]) # Variance
+            mu_average  = np.mean(spread[-_day:]) # Mean
+            sigma       = np.var (spread[-_day:]) # Variance
             sigma       = np.sqrt(sigma)
 
             my_invested_money = my_portfolio.get_BAL ()
             entry_transaction_cost =\
                 self.entry_strategy_transaction_cost(time_now, my_invested_money)
             if strategy_state == "WaitToEntry":
-                alpha=1
                 # We normalize the weights with the present money
                 # Amount of money in USDT I actually hold in my balance to trade
                 my_money = my_invested_money - entry_transaction_cost
@@ -176,7 +178,8 @@ class JohannsenClassic (st.Strategy):
                 portfolio_value = my_portfolio.get_TCV()
                 # We exit the Short strategy
                 # if portfolio_value/buying_value > 1.05+0.0015 :
-                if portfolio_value/buying_value > 1.0 + self.__transaction_cost__:
+                if portfolio_value/buying_value > 1.0 + self.__transaction_cost__\
+                    or strategy_state.elapsed_time_in_second (time_now) > 5*(24*60*60):
                     if spread[-1] < mu_average and self.is_strategy_short():
                         # if spread[-1] - spread[-2] < 0:
                             strategy_state.trailing_sell(time_now, exit_transaction_cost)
@@ -195,16 +198,18 @@ class JohannsenClassic (st.Strategy):
                             self.debug_strat(time_now, spread, mu_average, constant_std, sigma,\
                                 "SELL LONG", exit_transaction_cost)
 
-                elif strategy_state.elapsed_time(time_now) > 2*24*60*60:
+                # If we stay more than x-days into a position then we stop-loss
+                elif strategy_state.elapsed_time_in_second (time_now) > 10*(24*60*60):
                     self.exit(time_now, self.__transaction_cost__ )
                     self.change_state (\
                         state.StrategyFreeze(time_now, self, self._freezing_cycle))
                     print ("time_elapsed() : STOP LOSS = ", time_now)
+                    self.plot_mean_reverting (spread, mu_average, constant_std, sigma)
                     self.update_report(time_now, "Stop Loss", "Exit",\
                                         my_portfolio, entry_transaction_cost)
 
-                #Stop Loss at 5%
-                elif portfolio_value/buying_value < 0.80:
+                #Stop Loss at x%
+                elif portfolio_value/buying_value < 0.95:
                     if self._stop_loss_activated:
                         self.exit(time_now, self.__transaction_cost__ )
                         self.change_state (\
@@ -308,15 +313,22 @@ class JohannsenClassic (st.Strategy):
         print("time = ", time_now, ",",\
                 "TCV = ", round (my_portfolio.get_TCV(),4),",",\
                 "BAL = ", round(my_portfolio.get_BAL(),4),",",\
-                sell_or_buy, ", Transaction Fee = ", transaction_cost)
+                sell_or_buy, ", Transaction Fee = ", transaction_cost,\
+                ", sigma = ", sigma, "mu = ", mu_average)
         if self._debug:
-            plt.show(block=False)
-            plt.clf()
-            plt.plot(spread[-30:])
-            plt.plot((mu_average-constant_std*sigma)*np.ones(30))
-            plt.plot((mu_average)*np.ones(30))
-            plt.plot((mu_average+constant_std*sigma)*np.ones(30))
-            plt.show()
+            self.plot_mean_reverting (spread, mu_average, constant_std, sigma)
+
+
+    def plot_mean_reverting (self,\
+                            spread, mu_average, constant_std, sigma):
+        number_of_ticks = 96*2+10
+        plt.show(block=False)
+        plt.clf()
+        plt.plot(spread[-number_of_ticks:])
+        plt.plot((mu_average-constant_std*sigma)*np.ones(number_of_ticks))
+        plt.plot((mu_average)*np.ones(number_of_ticks))
+        plt.plot((mu_average+constant_std*sigma)*np.ones(number_of_ticks))
+        plt.show()
 
 # References
 # Binance Fees calculator : https://www.binance.com/en/support/faq/e85d6e703b874674840122196b89780a
