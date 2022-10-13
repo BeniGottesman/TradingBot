@@ -94,7 +94,7 @@ class JohannsenClassic (st.Strategy):
         # the state of the strategy
         strategy_state = self.get_state() #string overload
         if strategy_state == "Freeze":
-            strategy_state = self._state.add_counter(time_now) #string overload
+            self._state.add_counter(time_now) #string overload
             if strategy_state == "Freeze":
                 return
 

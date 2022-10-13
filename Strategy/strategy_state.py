@@ -136,11 +136,11 @@ class StrategyFreeze (StrategyState):
         return self.__cycle_counter__
 
     def add_counter(self, time_now: datetime) -> None:
-        strategy = self.__strategy__
+        _strategy = self.__strategy__
         if self.__cycle_counter__ < self.__freeze_time__:
             self.__cycle_counter__ = self.__cycle_counter__ + 1
             if self.__cycle_counter__ >= self.__freeze_time__:
-                strategy.change_state (StrategyWaitToEntry(time_now, strategy))
+                _strategy.change_state (StrategyWaitToEntry(time_now, _strategy))
 
     def freeze (self, time:datetime, _time_cycle: int) -> None :
         return
