@@ -105,8 +105,8 @@ class JohannsenClassic (st.Strategy):
             one_day = int (24*60/self.__time_candle__)
             _day = 2*one_day
             # The Spread or Portfolio to buy see research Spread
-            if strategy_state.elapsed_time_in_second (time_now) > 10*(24*60*60):
-                _day = 20*one_day
+            # if strategy_state.elapsed_time_in_second (time_now) > 10*(24*60*60):
+            #     _day = 20*one_day
             spread      = np.dot (log_return, -spread_weights) #WARNING MINUS
             mu_average  = np.mean(spread[-_day:]) # Mean
             sigma       = np.var (spread[-_day:]) # Variance
@@ -134,6 +134,10 @@ class JohannsenClassic (st.Strategy):
 
                 for key, value in zip(moneys, how_much_to_invest_weights):
                     investment_dict[key] = value #WARNING
+
+                #In order to hedge our position
+                investment_dict["BTCUSDT"] = -investment_dict["BTCUSDT"]
+                #In order to hedge our position
 
                 #we start the Long strategy
                 if spread[-1] < mu_average-constant_std*sigma:
@@ -178,8 +182,8 @@ class JohannsenClassic (st.Strategy):
                 portfolio_value = my_portfolio.get_TCV()
                 # We exit the Short strategy
                 # if portfolio_value/buying_value > 1.05+0.0015 :
-                if portfolio_value/buying_value > 1.0 + self.__transaction_cost__\
-                    or strategy_state.elapsed_time_in_second (time_now) > 5*(24*60*60):
+                if portfolio_value/buying_value > 1.0 + 2*self.__transaction_cost__\
+                    or strategy_state.elapsed_time_in_second (time_now) > 30*(24*60*60):
                     if spread[-1] < mu_average and self.is_strategy_short():
                         # if spread[-1] - spread[-2] < 0:
                             strategy_state.trailing_sell(time_now, exit_transaction_cost)
@@ -199,7 +203,7 @@ class JohannsenClassic (st.Strategy):
                                 "SELL LONG", exit_transaction_cost)
 
                 # If we stay more than x-days into a position then we stop-loss
-                elif strategy_state.elapsed_time_in_second (time_now) > 10*(24*60*60):
+                elif strategy_state.elapsed_time_in_second (time_now) > 30*(24*60*60):
                     self.exit(time_now, self.__transaction_cost__ )
                     self.change_state (\
                         state.StrategyFreeze(time_now, self, self._freezing_cycle))
@@ -221,8 +225,10 @@ class JohannsenClassic (st.Strategy):
                 # We freeze if we exit without arbitrage
                 # It means we have just sold the pf
                 if self.get_state() == "WaitToEntry"\
-                     and portfolio_value/buying_value < 0.999 + self.__transaction_cost__:
+                     and portfolio_value/buying_value < 0.95 + self.__transaction_cost__:
                     self.change_state (state.StrategyFreeze(time_now, self, self._freezing_cycle))
+                    self.update_report(time_now, "Freeze", "Exit",\
+                                    my_portfolio, entry_transaction_cost)
                     print("Freezing.")
 
             # self.__state__.setState("Nothing")
@@ -313,7 +319,7 @@ class JohannsenClassic (st.Strategy):
         print("time = ", time_now, ",",\
                 "TCV = ", round (my_portfolio.get_TCV(),4),",",\
                 "BAL = ", round(my_portfolio.get_BAL(),4),",",\
-                sell_or_buy, ", Transaction Fee = ", transaction_cost,\
+                sell_or_buy, ", Transaction Fee = ", round(transaction_cost,4),\
                 ", sigma = ", sigma, "mu = ", mu_average)
         if self._debug:
             self.plot_mean_reverting (spread, mu_average, constant_std, sigma)

@@ -20,6 +20,7 @@ class StatisticsViewer(obs.Observer):
         self.__nb_stop_loss__  = 0
         self.__nb_short__      = 0
         self.__nb_long__       = 0
+        self.__nb_freeze__     = 0
         self.__total__         = 0 # = __nb_long__+__nb_short__
         self.__long__   : list = []
         self.__short__  : list = []
@@ -32,7 +33,9 @@ class StatisticsViewer(obs.Observer):
         # self.__stat_data__.append(_data)
         tmp_report = subject.get_report()
         for time_key, _ in tmp_report.items():
-            if tmp_report[time_key]["Position Status"] == "Enter":
+            if tmp_report[time_key]["Position Status"] == "Freeze":
+                self.__nb_freeze__       += 1
+            elif tmp_report[time_key]["Position Status"] == "Enter":
                 if tmp_report[time_key]["Position"]   == "Long":
                     self.__nb_long__       += 1
                     self.__short__.append (0)
@@ -62,6 +65,8 @@ class StatisticsViewer(obs.Observer):
         tmp_str += "Total = " + str(self.__total__)
         tmp_str += "\n"
         tmp_str += "Number of Stop Loss = "      + str(self.__nb_stop_loss__)
+        tmp_str += "\n"
+        tmp_str += "Number of Freeze = "      + str(self.__nb_freeze__)
         tmp_str += "\n"
 
         return tmp_str

@@ -20,7 +20,7 @@ def test_strategy () -> None :
     # Scrap w.r.t. the volume
     # check_crypto_volume = {}
     # check_crypto_volume[quote_currency] = 7500000000
-    start_date = "2020-10"
+    start_date = "2020-04"
     end_date = "2022-08"
     parameters_scrap = {"folder": cst.ROOT_DIR,
                    "years": cst.YEARS, "months": [1,2,3,4,5,6,7,8,9,10,11,12],
@@ -73,7 +73,7 @@ def test_strategy () -> None :
     days_rolling_window = 300
     time_cycle_in_second = time_candle * 60
     initial_investment_percentage = 0.10
-    transaction_cost = 0.000000
+    transaction_cost = 0.0010000
     strategy_name = "Test Strategy"
     _days = 2
     _freezing_cycle = _days * (24*60/time_candle) #4 days freezing

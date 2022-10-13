@@ -378,7 +378,7 @@ class Portfolio(AbstractPortfolio):
     def get_BAL(self) -> float:
         return self.__BAL__
     def set_BAL(self, value: float, transaction_value:float=0.0) -> None:
-        self.__BAL__ = value- transaction_value
+        self.__BAL__ = value - transaction_value
     def add_BAL(self, value: float) -> None:
         self.__BAL__ += value
 #########BAL getter setter##########

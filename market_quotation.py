@@ -43,8 +43,8 @@ class MarketQuotation():
             tmp_df = tmp_df.iloc[tmp_df_closetime == time] #greedy X2
             _quote_current_value = tmp_df["Close"].iloc[0]
         else:
-            d = min(tmp_df_closetime, key=lambda _d: abs(_d - time))
-            _quote_current_value = tmp_df[tmp_df_closetime==d]['Close'].iloc[0]
+            _date = min(tmp_df_closetime, key=lambda _d: abs(_d - time))
+            _quote_current_value = tmp_df[tmp_df_closetime==_date]['Close'].iloc[0]
 
         return _quote_current_value
 
