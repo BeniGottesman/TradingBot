@@ -12,11 +12,11 @@ import designPattern.observer as obs
 import Strategy.statistics as stat
 
 class Strategy(obs.Subject):
-    def __init__(self, portfolio: pf.Portfolio, _freezing_cycle: int,
+    def __init__(self, my_portfolio: pf.Portfolio, _freezing_cycle: int,
                 _initial_investment_percentage: float, _stop_loss_activated: bool,
                 _transaction_cost: float, _start_date: datetime):
         self.__strategy_report__ = {}
-        self.__backtest_command__           = btcmd.BacktestCommand(portfolio)
+        self.__backtest_command__           = btcmd.BacktestCommand(my_portfolio)
         self._state                         = strategy_state.StrategyWaitToEntry(_start_date, self)
         self._short_strategy                = False
         #How many cycle do I freeze the strategy ?
@@ -29,6 +29,7 @@ class Strategy(obs.Subject):
         #Observers
         self._statistics_viewer             = stat.StatisticsViewer()
         self.attach (self._statistics_viewer)#don't forget to remove it at the end
+        self.__portfolio_caretaker__ = pf.PortfolioCaretaker(my_portfolio)
 
     @abstractmethod
     def do_strategy(self, constant_std: float, data: List, verbose = False):
@@ -133,3 +134,9 @@ class Strategy(obs.Subject):
 
     def get_transaction_cost (self)-> float:
         return self.__transaction_cost__
+
+    def portfolio_backup(self, time_now) -> None :
+        self.__portfolio_caretaker__.backup(time_now)
+
+    def get_last_buying_value(self) -> float:
+        return self.__portfolio_caretaker__.get_last_buying_value()

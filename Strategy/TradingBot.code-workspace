@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"name": "TradingBot",
+			"path": ".."
+		}
+	],
+	"settings": {
+		"python.analysis.extraPaths": [
+			"./design pattern",
+			"./design pattern"
+		]
+	}
+}

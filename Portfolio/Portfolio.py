@@ -329,8 +329,9 @@ class SeveralPortfolios(AbstractPortfolio):
 class Portfolio(AbstractPortfolio):
 
     #quoteCurrency="USD(T)" usually
-    def __init__(self,
-                 quote_currency: string, portfolio_name: string, starting_money: float) -> None:
+    def __init__(self, quote_currency: string,
+                portfolio_name: string, starting_money: float,
+                initial_investment_percentage: float) -> None:
         super().__init__("Portfolio", portfolio_name)
         self.__time_last_transaction__ = 0 #represent the time when the last transaction Occur
         self.__shares__: dict[share.Share] = {}
@@ -338,8 +339,13 @@ class Portfolio(AbstractPortfolio):
         # self.__portfolioName__ = portfolioName
         self.__state__ = state.PortfolioIsReady()
         self.__quote_currency__ = quote_currency
-        self.__BAL__ = abs(starting_money)
+        if initial_investment_percentage > 1:
+            initial_investment_percentage = 1.0
+        elif initial_investment_percentage < 0:
+            initial_investment_percentage = 0
+        self.__BAL__ = abs(starting_money*initial_investment_percentage)
         self.__TCV__ = abs(starting_money)
+        self.__capital__ = abs(starting_money)
 
 #############################################################
 ##########################PF STATE###########################
@@ -395,10 +401,23 @@ class Portfolio(AbstractPortfolio):
         market_quotation = mq.MarketQuotationClient().get_client()
         tmp = 0
         my_shares = self.__shares__
-        for key, this_share in my_shares.items():
-            _quote_current_value = market_quotation.quotation('Close Time', this_share, time)
-            tmp += abs (this_share[key].getShareQuantity())*_quote_current_value
+        for share_name, this_share in my_shares.items():
+            _quote_current_value = market_quotation.quotation('Close Time', share_name, time)
+            tmp += abs (this_share.get_share_quantity())*_quote_current_value
         return self.get_TCV() - tmp
+
+    def how_much_capital_invested_in_percentage(self,
+                                                time: datetime=datetime.date(1970, 1, 1))-> float:
+        """
+        Return the amount in percentage of available capital.
+        It return X%, and needs to be divided by 100 again
+        in order to be used.
+        """
+        # capital = self.get_capital(time)
+        capital = self.get_TCV() - self.value(time)
+        tcv = self.get_TCV()
+        _bal = self.get_BAL()
+        return 100.0-(tcv-_bal)/100.0
 
     def is_capital_available(self, time: datetime=datetime.date(1970, 1, 1)) -> Bool:
         """
@@ -430,22 +449,14 @@ class Portfolio(AbstractPortfolio):
         """
         capital = self.get_capital(time)
         if capital < 0:
-            print ("add_capital(): No capital Available to invest more")
+            print ("remove_capital(): No capital Available to invest more")
             return
         if percentage > 1 or percentage < 0:
-            print ("add_capital(): p=", percentage, "% Need to be between 0 and 1")
+            print ("remove_capital(): p=", percentage, "% Need to be between 0 and 1")
             return
         amount_to_remove = - capital * percentage
         self.add_BAL(amount_to_remove)
 
-    def how_much_capital_invested_in_percentage(self,
-                                                time: datetime=datetime.date(1970, 1, 1))-> float:
-        """
-        Return the amount in percentage of available capital
-        """
-        capital = self.get_capital(time)
-        tcv = self.get_TCV()
-        return (capital-tcv)/100
 #########Capital functions##########
 ####################################
 
@@ -542,7 +553,7 @@ class Portfolio(AbstractPortfolio):
         tmp_array = [] #np.array()
         my_shares = self.__shares__
         for _, this_share in my_shares.items():
-            qty = this_share.getShareQuantity()
+            qty = this_share.get_share_quantity()
             tmp_array = np.append(tmp_array, qty)
         return tmp_array
 
@@ -586,13 +597,15 @@ class Portfolio(AbstractPortfolio):
     #Update the TCV
     def update_portfolio(self, time: datetime=datetime.date(1970, 1, 1))-> None:
         """
-        Update the portfolio
+        Update the portfolio (TCV) w.r.t. the market quotation now (time).
         """
-        tmp = self.value (time)
+        _tmp = self.value (time)
         #UPDATE Step
         self.__time_last_transaction__ = time
-        self.__TCV__ = tmp
-        # self.__BAL__ = tmp
+        # _percentage_invested = self.\
+        #                     how_much_capital_invested_in_percentage(time)/100
+        # self.__TCV__ = self.__TCV__ + (self.__TCV__*_percentage_invested-_tmp)
+        self.__TCV__ = _tmp
 ##########Portfolio Update##########
 ####################################
 
@@ -615,6 +628,7 @@ class Portfolio(AbstractPortfolio):
             # else:
             #     tmp_value -= this_share.value(time)
         #self.__BAL__ += tmp_short
+
         return (self.__BAL__ - tmp_short) + tmp_long
 
     def set_transaction_time (self, time) -> None:

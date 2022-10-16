@@ -79,7 +79,7 @@ def test_strategy () -> None :
     _freezing_cycle = _days * (24*60/time_candle) #4 days freezing
     stop_loss_activated = False
     parameters_strategy = {
-            "starting money": 1000,
+            "starting money": 10000,
             "portfolio name": "test Joahnsen portfolio",
             "quote currency": "USDT",
             "time candle": time_candle,

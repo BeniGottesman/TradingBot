@@ -25,10 +25,12 @@ class JohannsenClassic (st.Strategy):
             print('error JohannsenClassic: _initial_investment_percentage')
             sys.exit()
         #We create a new portfolio = 0 with the shares we will trade with
+        initial_investment_percentage = parameters["initial investment percentage"]
         quote_currency = parameters['quote currency']
         portfolio_name = parameters['portfolio name']
         starting_money = parameters['starting money']
-        my_portfolio = pf.Portfolio(quote_currency, portfolio_name, starting_money)
+        my_portfolio = pf.Portfolio(quote_currency,
+                                    portfolio_name, starting_money, initial_investment_percentage)
         for key in parameters['shares']:
             my_portfolio.add_share(sh.CryptoCurrency(key))
         #portfolio created
@@ -60,28 +62,15 @@ class JohannsenClassic (st.Strategy):
         p_test = 1
         jres = statistics.get_johansen(log_return, p_test)
 
-        # if verbose :
-        #     print ("There are", jres.r, "cointegration vectors")
-        #     input("Press Enter to continue...")
-
-        # v =  np.array ([np.ones(jres.r), jres.evecr[:,0], jres.evecr[:,1]], dtype=object)
         spread_weights = jres.evecr[:,0] # Weights to hold in order to make the mean reverting strat
         #normalisation with the first crypto
         # spread_weights = spread_weights/spread_weights[0] 
-
-        # #since the spread is wrt the log so we add this loop
-        # market_quotation = mq.MarketQuotationClient().get_client()
-        # for i, _ in enumerate(spread_weights):
-        #     _share_name = moneys[i]
-        #     tmp_mq = market_quotation.\
-        #         quotation('Close Time', _share_name, time_now)
-        #     spread_weights [i] = spread_weights [i] #*np.log(tmp_mq)/tmp_mq
 
         return spread_weights, log_return
 
     # c=0.75 -> mu +/- 0.75xsigma
     # quotation = value of the different money now
-    def do_one_day (self, time_now: datetime, portfolio_caretaker: pf.PortfolioCaretaker,
+    def do_one_day (self, time_now: datetime,
                     constant_std: float, moneys: list, quotations: np.array,
                     verbose = False) -> None:
         time_serie_size   = quotations.shape[0]
@@ -115,6 +104,9 @@ class JohannsenClassic (st.Strategy):
             my_invested_money = my_portfolio.get_BAL ()
             entry_transaction_cost =\
                 self.entry_strategy_transaction_cost(time_now, my_invested_money)
+
+            ##################
+            ###### ENTRY ######
             if strategy_state == "WaitToEntry":
                 # We normalize the weights with the present money
                 # Amount of money in USDT I actually hold in my balance to trade
@@ -139,7 +131,7 @@ class JohannsenClassic (st.Strategy):
                 investment_dict["BTCUSDT"] = -investment_dict["BTCUSDT"]
                 #In order to hedge our position
 
-                #we start the Long strategy
+                # We start the Long strategy
                 if spread[-1] < mu_average-constant_std*sigma:
                     if spread[-1] - spread[-2] < 0:
                     # key = list(investment_dict)[0]
@@ -149,13 +141,12 @@ class JohannsenClassic (st.Strategy):
                         strategy_state.trailing_buy(time_now, investment_dict,\
                                                     entry_transaction_cost)
                         my_portfolio.set_transaction_time(time_now)# check if it is useful
-                        portfolio_caretaker.backup(time_now)
                         self.change_state (state.StrategyWaitToExit(time_now, self))
                         self.update_report(time_now,"Long","Enter",\
                                             my_portfolio, entry_transaction_cost)
                     self.debug_strat(time_now, spread, mu_average, constant_std,\
                          sigma, "BUY LONG", entry_transaction_cost)
-                 #we start the Short strategy
+                # We start the Short strategy
                 elif spread[-1] > mu_average+constant_std*sigma:
                     if spread[-1] - spread[-2] > 0:
                     #####Short = inverse the spread#####
@@ -167,18 +158,18 @@ class JohannsenClassic (st.Strategy):
                         strategy_state.trailing_buy(time_now,\
                             investment_dict, entry_transaction_cost)
                         my_portfolio.set_transaction_time(time_now)
-                        portfolio_caretaker.backup(time_now)
                         self.change_state (state.StrategyWaitToExit(time_now, self))
                         self.update_report(time_now, "Short", "Enter",\
                                            my_portfolio, entry_transaction_cost)
                         self.set_strategy_short (True)
                         self.debug_strat(time_now, spread, mu_average, constant_std,\
-                             sigma, "BUY SHORT", entry_transaction_cost)
+                                         sigma, "BUY SHORT", entry_transaction_cost)
 
-            #Wait to exit the strategy
+            ##################
+            ###### EXIT ######
             elif strategy_state == "WaitToExit":
                 exit_transaction_cost = self.exit_strategy_transaction_cost(time_now)
-                buying_value = portfolio_caretaker.get_last_buying_value()
+                buying_value = self.get_last_buying_value()
                 portfolio_value = my_portfolio.get_TCV()
                 # We exit the Short strategy
                 # if portfolio_value/buying_value > 1.05+0.0015 :
@@ -268,7 +259,6 @@ class JohannsenClassic (st.Strategy):
             print("No training time period")
             return
 
-        portfolio_caretaker = pf.PortfolioCaretaker(my_portfolio)
         number_of_shares = my_portfolio.get_number_of_shares()
         nparray_quotations = np.zeros(shape=(self.__rollingwindow__, number_of_shares))
 
@@ -296,7 +286,7 @@ class JohannsenClassic (st.Strategy):
                 j+=1
             time_now = market.time(tmp_sym, 'Close Time', end)
             my_portfolio.update_portfolio(time_now)
-            self.do_one_day (time_now, portfolio_caretaker,
+            self.do_one_day (time_now,
                             constant_std, symbol_to_trade,
                             nparray_quotations, verbose)
 
@@ -320,7 +310,7 @@ class JohannsenClassic (st.Strategy):
                 "TCV = ", round (my_portfolio.get_TCV(),4),",",\
                 "BAL = ", round(my_portfolio.get_BAL(),4),",",\
                 sell_or_buy, ", Transaction Fee = ", round(transaction_cost,4),\
-                ", sigma = ", sigma, "mu = ", mu_average)
+                ", sigma = ", round(sigma,4), "mu = ", round(mu_average,4))
         if self._debug:
             self.plot_mean_reverting (spread, mu_average, constant_std, sigma)
 

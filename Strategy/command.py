@@ -64,10 +64,6 @@ class BacktestCommand(StrategyCommandPortfolio):
                 #the long (+) are substracted
                 #the short (-) are added to the BAL
                 tmp_balance -= (self.get_portfolio.get_share(key).value(time))
-            # if quantity < 0:
-            #     tmp_balance += (self.pf.get_share(key).value(time))
-            # else :
-            #     tmp_balance -= (self.pf.get_share(key).value(time))
 
         # tmp_balance = self._portfolio.get_BAL() - tmp_balance
         self.get_portfolio.set_BAL(tmp_balance - transaction_cost)
