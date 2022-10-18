@@ -120,10 +120,10 @@ class AbstractPortfolio(ai.AbstractInstrument, obs.Subject):
                                                 time: datetime=datetime.date(1970, 1, 1))-> float:
         pass
     @abstractmethod
-    def add_capital(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
+    def add_capital_to_balance(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
         pass
     @abstractmethod
-    def remove_capital(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
+    def remove_capital_to_balance(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
         pass
     @abstractmethod
     def is_capital_available(self, time: datetime=datetime.date(1970, 1, 1)) -> Bool:
@@ -257,7 +257,7 @@ class SeveralPortfolios(AbstractPortfolio):
             return True
         return False
 
-    def add_capital(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
+    def add_capital_to_balance(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
         """
         If there is available capitale then this function add capital * percentage
         to invest into the market
@@ -267,7 +267,7 @@ class SeveralPortfolios(AbstractPortfolio):
             _p = percentage[pf_name]
             portfolio.add_capital(_p, time)
 
-    def remove_capital(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
+    def remove_capital_to_balance(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
         """
         remove Capital from balance
         """
@@ -343,9 +343,12 @@ class Portfolio(AbstractPortfolio):
             initial_investment_percentage = 1.0
         elif initial_investment_percentage < 0:
             initial_investment_percentage = 0
+        #BAL = BALance
         self.__BAL__ = abs(starting_money*initial_investment_percentage)
-        self.__TCV__ = abs(starting_money)
-        self.__capital__ = abs(starting_money)
+        #CAI = Capital Available to Invest
+        self.__CAI__ = abs(starting_money - self.__BAL__)
+        #TCV = Total Current Value
+        self.__TCV__ = abs(starting_money) #= BAL+CAI if no position, and value()+CAI otherwise 
 
 #############################################################
 ##########################PF STATE###########################
@@ -398,13 +401,13 @@ class Portfolio(AbstractPortfolio):
         """
         Return the available capital to invest in the market at certain time
         """
-        market_quotation = mq.MarketQuotationClient().get_client()
-        tmp = 0
-        my_shares = self.__shares__
-        for share_name, this_share in my_shares.items():
-            _quote_current_value = market_quotation.quotation('Close Time', share_name, time)
-            tmp += abs (this_share.get_share_quantity())*_quote_current_value
-        return self.get_TCV() - tmp
+        # market_quotation = mq.MarketQuotationClient().get_client()
+        # tmp = 0
+        # my_shares = self.__shares__
+        # for share_name, this_share in my_shares.items():
+        #     _quote_current_value = market_quotation.quotation('Close Time', share_name, time)
+        #     tmp += abs (this_share.get_share_quantity())*_quote_current_value
+        return self.__CAI__
 
     def how_much_capital_invested_in_percentage(self,
                                                 time: datetime=datetime.date(1970, 1, 1))-> float:
@@ -413,11 +416,7 @@ class Portfolio(AbstractPortfolio):
         It return X%, and needs to be divided by 100 again
         in order to be used.
         """
-        # capital = self.get_capital(time)
-        capital = self.get_TCV() - self.value(time)
-        tcv = self.get_TCV()
-        _bal = self.get_BAL()
-        return 100.0-(tcv-_bal)/100.0
+        return 100.0-self.__CAI__/100.0
 
     def is_capital_available(self, time: datetime=datetime.date(1970, 1, 1)) -> Bool:
         """
@@ -428,7 +427,8 @@ class Portfolio(AbstractPortfolio):
             return True
         return False
 
-    def add_capital(self, percentage: float, time: datetime=datetime.date(1970, 1, 1)) -> None:
+    def add_capital_to_balance(self,\
+        percentage: float, time: datetime=datetime.date(1970, 1, 1)) -> None:
         """
         If there is available capitale then this function add capital * percentage
         to invest into the market
@@ -441,9 +441,14 @@ class Portfolio(AbstractPortfolio):
             print ("add_capital(): p=", percentage, "% Need to be between 0 and 1")
             return
         amount_to_invest = capital * percentage
+        if self.__CAI__ - amount_to_invest < 0:
+            print ("add_capital(): No capital")
+            return
         self.add_BAL(amount_to_invest)
+        self.__CAI__ -= amount_to_invest
 
-    def remove_capital(self, percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
+    def remove_capital_to_balance(self,\
+        percentage, time: datetime=datetime.date(1970, 1, 1)) -> None:
         """
         remove Capital from balance
         """
@@ -455,7 +460,11 @@ class Portfolio(AbstractPortfolio):
             print ("remove_capital(): p=", percentage, "% Need to be between 0 and 1")
             return
         amount_to_remove = - capital * percentage
+        if self.__BAL__ - amount_to_remove < 0:
+            print ("remove_capital(): No capital to renove from BAL")
+            return
         self.add_BAL(amount_to_remove)
+        self.__CAI__ += amount_to_remove
 
 #########Capital functions##########
 ####################################
@@ -605,7 +614,7 @@ class Portfolio(AbstractPortfolio):
         # _percentage_invested = self.\
         #                     how_much_capital_invested_in_percentage(time)/100
         # self.__TCV__ = self.__TCV__ + (self.__TCV__*_percentage_invested-_tmp)
-        self.__TCV__ = _tmp
+        self.__TCV__ = _tmp + self.__CAI__
 ##########Portfolio Update##########
 ####################################
 

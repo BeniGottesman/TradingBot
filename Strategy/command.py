@@ -79,7 +79,8 @@ class BacktestCommand(StrategyCommandPortfolio):
 
         # tmp_balance = 0
         my_portfolio = self.get_portfolio
-        tmp_portfolio_value = my_portfolio.value(time)
+        tmp_portfolio_invested_value = my_portfolio.value(time)
+        _tcv = my_portfolio.get_capital() + tmp_portfolio_invested_value
         shares = my_portfolio.get_shares()
         # tmp_sum_transaction_cost = 0.0
         for key in shares.keys():
@@ -88,8 +89,8 @@ class BacktestCommand(StrategyCommandPortfolio):
             shares[key].set_share_quantity(0)
 
         #Then we update the portfolio
-        my_portfolio.set_TCV (tmp_portfolio_value - transaction_cost)
-        my_portfolio.set_BAL (tmp_portfolio_value - transaction_cost)
+        my_portfolio.set_TCV (_tcv - transaction_cost)
+        my_portfolio.set_BAL (tmp_portfolio_invested_value - transaction_cost)
         # self.pf.update_portfolio(time)
 
         #ATTENTION CHECK IF IT IS GOOD
